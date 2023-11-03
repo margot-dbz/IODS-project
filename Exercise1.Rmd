@@ -1,5 +1,5 @@
 ---
-title: "** BLA BLA BLA 3 Introduction to Open Data Science, Exercise set 1**"
+title: "**Introduction to Open Data Science, Exercise set 1**"
 
 subtitle: "**R basics using the RHDS book**"
 
@@ -11,6 +11,8 @@ output:
     toc_depth: 2
     number_section: false
 ---
+
+[My git repository](https://github.com/margot-dbz/IODS-project)
 
 This R Markdown sheet includes a quite large set of R code chunks taken from the RHDS book **R for Health Data Science** by Ewen Harrison and Riinu Pius (CRC Press, 2021), available online at <https://argoshare.is.ed.ac.uk/healthyr_book/>. The structure follows the structure of the book (chapters 2, 3, 4, 5, 6, and 8 and their sections and subsections).
 
@@ -60,6 +62,10 @@ Have fun! This will get you ready for the rest of the IODS course!
 
 **So try this below:** select (with mouse or arrow keys) the install.packages("...") and run it (by Ctrl+Enter / Cmd+Enter). It will install the tidyverse package collection that we will need all the time.
 
+```{r}
+install.packages("tidyverse") 
+```
+
 After an successful installation (that might take some time), continue by activating the actual functions, beginning from library(...) and then finally reading the data in:
 
 ```{r}
@@ -91,6 +97,9 @@ typesdata
 typesdata_faulty <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/RHDS/master/data/typesdata_faulty.csv")
 spec(typesdata_faulty)
 typesdata_faulty
+install.packages("lubridate")
+library(lubridate)
+typesdata_faulty$date <- ymd_hm(typesdata_faulty$date) # we need to correct the format in the dataset. 
 ```
 
 ### 2.2.1 Numeric variables (continuous)
@@ -107,17 +116,19 @@ library(tidyverse)
 near(0.10+0.05, 0.15)
 
 near(measurement_mean, 3.333333, 0.000001)
+near(measurement_mean, 3.6, 1)
+near(measurement_mean, 3.6, 0.1)
 ```
 
 ### 2.2.2 Character variables
 
 ```{r}
-library(tidyverse)
+library(tidyverse) # You can load the libraries at the beginning of your document, and they will be available for all subsequent chunks in the document. 
 typesdata %>%
   count(group)
 
 typesdata %>%
-  count(group, sort = TRUE)
+  count(group, sort = TRUE) # Sort the group based on the count from big to small
 
 # all ids are unique:
 typesdata %>% 
@@ -156,7 +167,8 @@ my_datetime %>% class()
 2.2.4 continued...
 
 ```{r}
-my_datetime_converted <- ymd_hm(my_datetime)
+my_datetime <- "2020-12-01 12:00"
+my_datetime_converted <- ymd_hm(my_datetime) # to make it work I need to add dates to the column date that is empty in the dataset
 my_datetime_converted
 
 # now it will work:
@@ -170,17 +182,27 @@ ymd_hm("2021-01-02 12:00") + my_datesdiff
 # another error challenge here... (again you may put '#' in front of that afterwards)
 560/my_datesdiff
 560/as.numeric(my_datesdiff)
+
+#replace the NA in the date column from typesdata_faulty
+typesdata_faulty$date <- as.POSIXct(typesdata_faulty$date, format = "%d.%m.%Y", tz = "UTC")
+typesdata_faulty$date[is.na(typesdata_faulty$date)] <- as.POSIXct("30.12.2022", format = "%d.%m.%Y", tz = "UTC")
+view(typesdata_faulty)
+typesdata_faulty %>% 
+  count(date, sort = TRUE)
+
 ```
 
 2.2.4 continued...
 
 ```{r}
-parse_date_time("12:34 07/Jan'20", "%H:%M %d/%b'%y")
+parsed_date <- parse_date_time("12:34 07/Jan'20", "%H:%M %d/%b'%y")
 
-Sys.time()
+Sys.time() #Today time and time when code is run
 Sys.time() %>% format("%H:%M on %B-%d (%Y)")
 
 Sys.time() %>% format("Happy days, the current time is %H:%M %B-%d (%Y)!")
+
+Sys.time() - parsed_date
 ```
 
 ## 2.3 Objects and functions
@@ -228,29 +250,37 @@ a <- 103
 a
 
 seq(15, 30)
+seq(15, a+1) # it print 15 to 104 included
 
 example_sequence <- seq(15, 30)
 
 example_sequence <- example_sequence/2
 
-example_sequence
+example_sequence # It will print (15/2) 7.5 to (30/2) 15
+
+sequence <- seq(15, 30, by = 2) # It will print 15, 17, 19 ect
+print(sequence)
 ```
 
 ### 2.3.5 \<- and =
 
 ```{r}
 mean_result <- mean(mydata$var2, na.rm = TRUE)
+print(mean_result)
+mean_result <- mean(mydata$var2, na.rm <- TRUE) # does not work because of <- instead of =
+
+mean_result = mean(mydata$var2, na.rm <- TRUE) # does not work because of = instead of <-
 ```
 
 ### 2.3.6 Recap: object, function, input, argument
 
 ## 2.4 Pipe - %\>%
-
+%>% 
 ```{r}
 library(tidyverse)
-mydata$var1 %>% mean()
+mydata$var1 %>% mean() # print the value. Does not store the object.
 
-mean_result <- mydata$var1 %>% mean()
+mean_result <- mydata$var1 %>% mean() # Does not print but keep the output in an object we can reuse later
 ```
 
 ### 2.4.1 Using . to direct the pipe
@@ -271,6 +301,9 @@ gbd_short %>%
 
 gbd_short %>% 
   filter(year == 1995)
+
+mydata %>% 
+  filter(sex == "Male")
 ```
 
 2.5 continued...
@@ -278,22 +311,29 @@ gbd_short %>%
 ```{r}
 # do you see what is wrong here? (you may fix it or hide it with '#' afterwards)
 gbd_short %>% 
- filter(year = 1995)
+ filter(year = 1995) # whould be == and not =
 
 gbd_short %>% 
   filter(year == 1995 | year == 2017)
 
 gbd_short %>% 
   filter(year == max(year) | year == min(year))
+
+gbd_short %>% 
+  filter(year == max(year) | year == min(year), cause == "Injuries")
+
+gbd_short %>% 
+  filter(year == max(year) | year == min(year))  %>% 
+  filter(cause == "Injuries")
 ```
 
 ### 2.5.1 Worked examples
 
 ```{r}
-mydata_year2000 <- gbd_short %>% 
+mydata_year2000 <- gbd_short %>% # it does not print it but store it in an object
   filter(year == 2000)
 
-mydata_year2000
+mydata_year2000 # This prints the object that has been populated by the data filter by 2000
 ```
 
 2.5.1 continued...
