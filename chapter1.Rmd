@@ -1,13 +1,87 @@
+---
+editor_options: 
+  markdown: 
+    wrap: 72
+---
 
 # About the project
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+[My git repository](https://github.com/margot-dbz/IODS-project)
 
 ```{r}
-# This is a so-called "R chunk" where you can write R code.
-
 date()
+```
+
+**Heads-up:** I am new with R. During this first week, I studied the 3
+first chapters of the book made on R studio and watched the given
+tutorial videos.\
+\
+**I have learned how to:**\
+- set my directory\
+- use the R project mode, the R markdown file and github commit\
+- install and use libraries\
+- identify and use the different data types including the factors \
+- use the pipe %\>% (it means "and then...") \
+- open data set, read data set, read the structure of the data set \
+- select rows, columns and match text or rename column name\
+- filter data based on variable values\
+- create a table / tibble \
+- create an object that is reusable later\
+- use the time format\
+- add columns with text, int, calculations, categories etc.\
+- group data with one or many variables to then perform calculation\
+- combine all data types to create a string with the function paste()\
+- check the NA and remove the NA to do calculations \
+- summarize to sum up data per variable value\
+- manipulate table from wide to long and long to wide\
+- combine 2 tables (functions: bind, inner_join, full_join, left_join,
+right_join)\
+- use the most common arithmetic functions and use percentage\
+- rank and reorder value
+
+With this tool I discovered how easy and fast it can be to manipulate
+and visualize data from a big data set.\
+\
+**Conclusion of Week 1:\
+**The book is really well made. The style is easy to follow and
+understand. We can learn at our own pace and try the examples in R
+studio to assimilate the concepts well.\
+I am new with R and I find it hard to learn so many new different
+concepts in a week. I would have liked to have more exercises, without
+the solutions directly written under and with a tool to correct our
+lines of code. Finally, I understand it is not necessary to know by
+heart every function, but I would like to understand well the
+capabilities of this tool by practicing and doing more real life
+exercises.\
+\
+**Lines of code to summarize learning in week 1:**
+
+```{r}
+
+# Get the data set
+library(tidyverse)
+library(scales)
+gbd_full <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/RHDS/master/data/global_burden_disease_cause-year-sex-income.csv")
+
+# This is a code I wrote to know the pourcentage of deaths per cause for each year.
+exercise4 <- gbd_full %>% 
+  group_by(year, cause) %>% 
+  summarise(total_per_cause= sum(deaths_millions)) %>% 
+  group_by(year) %>% 
+  mutate(total_per_year =sum(total_per_cause)) %>% 
+  mutate(percentage = percent(total_per_cause/total_per_year)) %>% 
+  select(year,cause,percentage) %>% 
+  pivot_wider(names_from = cause, values_from = percentage)
+  
+
+exercise4
+
+# This is a code I wrote to know the number of deaths per sex and income and see the ratio Male / Female for each income type.
+gbd_full %>% 
+  filter(year ==1990) %>% 
+  group_by(sex,income) %>% 
+  summarize(deaths_per_sex_income = sum(deaths_millions)) %>% 
+  pivot_wider(names_from = sex, values_from = deaths_per_sex_income) %>% 
+  mutate(diff_M_F = Male/Female)
 
 ```
-The text continues here.
-
