@@ -12,7 +12,7 @@ editor_options:
 date()
 ```
 
-**Heads-up:** I am new with R. During this first week, I studied the 3
+**Heads-up:** I am new with R. During this first week, I studied the 4
 first chapters of the book made on R studio and watched the given
 tutorial videos.\
 \
@@ -37,7 +37,11 @@ tutorial videos.\
 - combine 2 tables (functions: bind, inner_join, full_join, left_join,
 right_join)\
 - use the most common arithmetic functions and use percentage\
-- rank and reorder value
+- rank and reorder value\
+- create plots (bar, col, line, point, box, histogram)\
+- play with the different style and aesthetic possibilities\
+- add labels to plots\
+- combine plots together
 
 With this tool I discovered how easy and fast it can be to manipulate
 and visualize data from a big data set.\
