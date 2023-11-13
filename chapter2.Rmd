@@ -29,7 +29,7 @@ Please find the script file in the Github: create_learning2014_week2
 **Exercise:** DATA ANALYSIS
 
 
-# QUESTION 1:
+## QUESTION 1:
 
 ```{r}
 
@@ -41,8 +41,7 @@ library("tidyverse")
 library("finalfit")
 library("broom")
 
-# read table
-csv_table_read <- read_csv("~/Desktop/Open data with R 2023/IODS-project/learning2014.csv")
+
 csv_table_read
 
 # analyze the structure of the dataset
@@ -51,7 +50,7 @@ str(csv_table_read)
 # analyze the dimension of the dataset
 dim(csv_table_read)
 
-# Missing data?
+# Missing data? No data is missing.
 ff_glimpse(csv_table_read)
 
 # summary statistics for each variable
@@ -86,7 +85,7 @@ p
 
 # Relationship between points and attitudes
 csv_table_read %>% 
-  ggplot(aes(x= attitude, y=points)) +
+  ggplot(aes(x= attitude, y= points)) +
   geom_point() +
   facet_wrap(~ gender) +
   geom_smooth(method = "lm")
@@ -94,8 +93,8 @@ csv_table_read %>%
 
 ```
 
-# QUESTION 2, 3 and 4: 
-## Female model
+## QUESTION 2, 3 and 4: 
+### Female model
 ```{r}
 #female model
 female_data <- csv_table_read %>% 
@@ -106,7 +105,7 @@ View(female_data)
 
 # Fit a multiple linear model for females. Let's check how points are influenced by age, attitude and deep learning approach
 female_fitmodel <- lm(points ~ age + attitude + deep, data = female_data)
-# In this model I want to check if age impacts points without impacting attitude and deep. and if deep and attitude are both impacting each other and also impacts points. 
+# In this model I want to check if age, attitude and deep impact points without impacting each other. 
 
 # summary of std, p value and 
 summary(female_fitmodel) 
@@ -114,36 +113,38 @@ summary(female_fitmodel)
 summary(female_fitmodel)$r.squared
 #"age," "attitude," and "deep" explains about 18% of the variation of "points"
 
-# p value intercept: is significant and it seems that it plays a significant role in the regression model
+# p value intercept: it is significant as very small (0.002) and seems to play a significant role in the regression model
 # baseline of model in 13.59 (estimate), when no factors are taken into account.
-# age is not significant
-# deep is not significant
+# age is not significant and is not correlated with points
+# deep is not significant and is not correlated with points
 # attitude is significant and it seems to play a significant role on the points.
 # for one point increase in the attitude, the points increase by 3.63 (estimate)
-# High std shows that the estimate is not so precise and has more variability.
+# High std shows that the estimate is not so precise. It could due to sample size.
 
-# I decide to drop the deep and the age as variables and keep only the attitude.
+# I decide to drop the deep and the age variables and keep only the attitude.
 female_fitmodel2 <- lm(points ~ attitude, data = female_data)
 summary(female_fitmodel2) 
 tidy(female_fitmodel2)
 summary(female_fitmodel2)$r.squared
 # p value is very low, same for the std, so this model is correct and justify the positive relation vs a positive attitude -> more points.
-# rsquare is still too low..
-# The model doesn't provide a good fit for the data, and a significant portion of the variance is not explained. Is it due to the sample size?
+# rsquare is still quite low..
+# The model doesn't provide a good fit for the data, and a significant portion of the variance is not explained. Is could be due to the sample size.
 
 # autoplot: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage
 # Identify issues with my regression model, such as non-linearity, non-normality, or influential data points
 
-# autoplot doesnt knit !!
+# autoplot doesnt knit.
 #autoplot(female_fitmodel)
-#autoplot(female_fitmodel2) 
+#autoplot(female_fitmodel2)
+
+# I use plot function and which to get the desired plots.
 plot(female_fitmodel,which = c(1,2,5))
 plot(female_fitmodel2,which = c(1,2,5))
-#non normality at the end and beginning of the line in qq plot
-# both show that there are some points that are high leverage indicated on the residuals vs leverage
+# we observe non normality at the end and beginning of the line in qq plot
+# both models show that there are some points that are high leverage indicated on the residuals vs leverage
 ```
 
-## Male model
+### Male model
 ```{r}
 # male model
 male_data <- csv_table_read %>% 
@@ -154,14 +155,14 @@ summary(male_data)
 
 # Fit a multiple linear model for males. Let's check how points are influenced by age, attitude and deep learning approach
 male_fitmodel <- lm(points ~ age + attitude + deep, data = male_data)
-# In this model I want to check if age impacts points without impacting attitude and deep. and if deep and attitude are both impacting each other and also impacts points. 
 
 # summary of std, p value and 
 summary(male_fitmodel) 
 tidy(male_fitmodel)
 summary(male_fitmodel)$r.squared 
-# similar results than for the female. All variables have smaller p value than for the female. 
-# rsquare is higher as it explains 27% but it is still quite low
+# similar results than for the female. 
+# All variables have a smaller p value than for in the female model. 
+# rsquare is higher as it explains 27% but it is still quite low. It could be due to the sample size.
 
 # I decide to drop the deep and the age as variables and keep only the attitude.
 male_fitmodel2 <- lm(points ~ attitude, data = male_data)
@@ -170,7 +171,7 @@ tidy(male_fitmodel2)
 summary(male_fitmodel)$r.squared 
 # p value is very low, same for the std, so this model is correct and justify the positive relation vs a positive attitude -> more points.
 # rsquare is higher as it explains 27% but it is still quite low
-# The model doesn't provide a good fit for the data, and a significant portion of the variance is not explained. Is it due to the sample size?
+# The model doesn't provide a good fit for the data, and a significant portion of the variance is not explained. Is could be due to the sample size.
 
 # autoplot: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage
 # Identify issues with my regression model, such as non-linearity, non-normality, or influential data points
@@ -178,32 +179,34 @@ summary(male_fitmodel)$r.squared
 # autoplot doesnt knit !!
 # autoplot(male_fitmodel)
 # autoplot(male_fitmodel2) 
+
+# plot with the plot function
 plot(male_fitmodel,which = c(1,2,5))
 plot(male_fitmodel2,which = c(1,2,5))
-#The blue line in residuals vs fitted stays quite close to the 0 line which is good
-# both show non normality. it is observed at the beginning of the qq plot
-# both show that there are some points that are high leverage indicated on the residuals vs leverage
+#The red line in residuals vs fitted stays quite close to the 0 line which is good
+# both models show non normality. it is observed at the beginning of the qq plot
+# both models show that there are some points that are high leverage indicated on the residuals vs leverage
 ```
 
-## other models tested:
+### other models tested:
 ```{r}
 
 test_fit1 <- csv_table_read %>% 
   lm(points ~ deep, data = .)
 library(ggfortify)
 summary(test_fit1)
-tidy(test_fit1)
+tidy(test_fit1) # p value is small and significant
 summary(test_fit1)$r.squared  # too low
 
 test_fit2 <- csv_table_read %>% 
   lm(points ~ deep * gender, data = .)
 library(ggfortify)
 summary(test_fit2)
-tidy(test_fit2)
+tidy(test_fit2) # p value is small and significant
 summary(test_fit2)$r.squared # too low
 ```
 
-# Basic data
+## Basic data
 
 ```{r}
 
@@ -234,12 +237,12 @@ csv_table_read %>%
   geom_point() +
   labs(title = "Distribution of points per age and gender")
 
-# with this data we can see the points that drives the mean up (vs the median) for the age. 
+# with this data we can observe the different age points that drives the mean up (vs the median).
 
 ```
 
-# Gender analysis
-## Gender and points
+## Gender analysis
+### Gender and points
 ```{r}
 # Distribution of the points per gender - histogram
 csv_table_read %>% 
@@ -252,7 +255,7 @@ csv_table_read %>%
 csv_table_read %>% 
   ggplot(aes(y = points, x = gender, colour = gender)) +
   geom_boxplot() +
-  labs(title = "Histogram of points by Gender")
+  labs(title = "Boxplot of points by Gender")
 
 #QQ plot - points per gender
 csv_table_read %>% 
@@ -267,7 +270,7 @@ csv_table_read %>%
 
 ```
 
-## Gender and attitude
+### Gender and attitude
 ```{r}
 # attitude vs gender
 csv_table_read %>% 
@@ -293,7 +296,7 @@ csv_table_read %>%
   t.test(attitude ~ gender, data = .)
 ```
 
-## Gender and deep learning approach: 
+### Gender and deep learning approach: 
 ```{r}
 # deep learning approach vs gender
 # We could do that for all approach of learning
@@ -323,8 +326,8 @@ csv_table_read %>%
 
 ```
 
-# age Analysis
-## age and points
+## Age Analysis
+### Age and points
 ```{r}
 # does not seem to impact on points
 csv_table_read %>% 
@@ -334,7 +337,7 @@ csv_table_read %>%
   geom_smooth(method = "lm")
 ```
 
-## age and attitude
+### Age and attitude
 ```{r}
 # does not seem to impact on attitude
 csv_table_read %>% 
@@ -344,8 +347,8 @@ csv_table_read %>%
   geom_smooth(method = "lm")
 ```
 
-# Learning approach: deep analysis 
-## deep and age
+## Learning approach: deep analysis 
+### deep and age
 ```{r}
 # deep learning approach vs age - no correlation
 # We could do that for all approach of learning
@@ -356,7 +359,7 @@ csv_table_read %>%
   geom_smooth(method = "lm")
 ```
 
-## deep and points
+### deep and points
 ```{r}
 # deep learning approach vs points - The deep approach seems to have a correlation with the number of points
 csv_table_read %>% 
