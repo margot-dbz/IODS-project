@@ -1,0 +1,392 @@
+---
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Chapter 3
+
+```{r}
+
+setwd("~/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project")
+
+library(broom)
+library(ggplot2)
+library(dplyr)
+data <- read.csv("alc.csv",sep = ",", header = T)
+
+class(data$high_use)
+class(data$famrel)
+class(data$goout)
+class(data$studytime)
+
+```
+
+## Question 3, 4 and 5
+
+The purpose of your analysis is to study the relationships between
+high/low alcohol consumption and some of the other variables in the
+data. To do this, choose 4 interesting variables in the data and for
+each of them, present your personal hypothesis about their relationships
+with alcohol consumption. (0-1 point)
+
+### Hypothesis 1: students with a good family relationship have less chance to have a high consumption of alcohol
+
+Comments on the below codes chunk: There is a negative correlation
+between family relationship and the consumption of alcohol. When the
+relationship is not good (from 1 to 5), there are more risk to drink lot
+of alcohol. Pvalue is 0,0204 which is representative(\<0.05). The
+coefficient for the variable Famrel in this model is -0.2838. The odds
+ratio associated with a one-unit change in Famrel is approximately
+exp(-0.2838) = 0.753. For a one-unit decrease in Famrel, the odds of
+'high_use' decrease by about 1 - 0.753 = 24.7%. With 95% confidence, the
+true value of the odds ratio for the intercept lies between
+approximately 0.49 and 3.35. For the famrel, the odds ratio lies between
+0.59 and 0.95, since it is less than 1, there is a statistical
+significance, with a negative effect from the variable famrel to the
+high_use. The null deviance is bigger than the residual deviance of the
+model. It shows that the model explains a part of the variable high-use.
+
+```{r}
+
+# I add the family = binomial as we do the analyze on a binary variable (True and False)
+logistic_model_family_alcohol <-  glm(high_use ~ famrel, data = data, family = binomial)
+summary(logistic_model_family_alcohol)
+
+
+# get the coef
+coef(logistic_model_family_alcohol) %>% exp()
+
+# odd of being in high use - exponential of the coef
+exp(coef(logistic_model_family_alcohol))
+
+# get the intervals
+confint(logistic_model_family_alcohol) %>% exp()
+
+# get the variance, BIC and AIC
+logistic_model_family_alcohol %>% 
+  glance()
+
+# If I want to check the impact of high use to family relationship -> famrel is ordinal so I use the ordinal regression model
+library(ordinal)
+ordinal_model_family_alcohol <- clm(factor(famrel) ~ high_use, data = data)
+summary(ordinal_model_family_alcohol)
+
+# This box plot confirms our hypothesis and conclusion. We can see that the mean and median of the family relationship quality is very different whether the students drink a lot or not. 
+data %>% 
+  ggplot(aes(x= factor(high_use), y= famrel)) +
+  geom_boxplot() +
+  labs(title = "Quality of family relationship vs the alcohol consumption",
+       x = "High consumption",
+       y = "quality of family relationship")
+
+data %>%
+  ggplot(aes(x = as.factor(famrel), fill = as.factor(high_use))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Family relationship and Alcohol Consumption",
+    x = "Family relation score from 1 to 5",
+    y = "Proportion of students",
+    fill = "High Use of alcohol: True of False"
+  )
+
+# there are less score 5 and way more score 2 among the students who drink a lot
+data %>%
+  ggplot(aes(x = as.factor(high_use), fill = as.factor(famrel))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Family relation score distribution by Alcohol Consumption",
+    x = "High Use of alcohol: True of False",
+    y = "Proportion of students",
+    fill = "Family relation score from 1 to 5"
+  )
+
+
+
+```
+
+### Hypothesis 2: students who go more out with their friends have more risk to have a high consumption of alcohol
+
+Comments on the below codes chunk: There is a a positive relationship
+between going out and the consumption of alcohol and a significant p
+value (very small value), which confirms the hypothesis. The more
+students go out the more risks they have to have a high consumption in
+alcohol.
+
+The coefficient for goout is 0.7563.The odds ratio associated with a
+one-unit change in Goout is approximately exp(0.7563) = 2.13.For a
+one-unit increase in Goout, the odds of 'high_use' increase by about
+2.13 - 1 = 1.13, which is about 113% increase.
+
+With 95% confidence, the true value of the odds ratio for the intercept
+lies between approximately 0.015 and 0.078. For the goout, the odds
+ratio lies between 1.71 and 2.66, since it is \> 1, there is a
+statistical significance with a positive effect of this variable on the
+high_use.
+
+The null deviance is way bigger than the residual deviance of the model.
+It shows that the model explains the variable high-use, even better than
+in the hypothesis 1. The AIC of this model is even smaller than the
+previous model too, which confirms my conclusion.
+
+```{r}
+logistic_model_goout_alcohol <- glm(high_use ~ goout, data = data, family = binomial)
+summary(logistic_model_goout_alcohol)
+tidy(logistic_model_goout_alcohol)
+
+# get the coef
+coef(logistic_model_goout_alcohol) %>% exp()
+
+# get the exp of the coef
+exp(coef(logistic_model_goout_alcohol))
+
+# get the intervals
+confint(logistic_model_goout_alcohol) %>% exp()
+
+# plots
+data %>% 
+  ggplot(aes(x= factor(high_use), y= goout)) +
+  geom_boxplot() +
+  labs(title = "Going out with friends vs the alcohol consumption",
+       x = "High consumption",
+       y = "go out with friends (from 1 to 5)")
+
+
+# the students who are drinking more are more numerous among the students who gave the score 4 and 5 for the goout variable.
+data %>%
+  ggplot(aes(x = factor(goout), fill = factor(high_use))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Going Out Behavior and Alcohol Consumption",
+    x = "going out with friends from 1 to 5",
+    y = "Proportion of students",
+    fill = "High Use of alcohol: True of False"
+  )
+
+# there are more score 1, 2 and 3 among the students who do not drink a lot
+data %>%
+  ggplot(aes(x = factor(high_use), fill = factor(goout))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Alcohol Consumption and going out behavior",
+    x = "High Use of alcohol: True of False",
+    y = "Proportion of students",
+    fill = "going out with friends from 1 to 5"
+  )
+
+```
+
+### Hypothesis 3: students who study a lot have less risk to have a high consumption of alcohol
+
+Comments about the below code chunk: The p value is very small and
+estimate is negative. We can conclude there is a negative relation
+between the study time and the alcohol consumption. When the study time
+increases the odds of high alcohol consumption decreases.
+
+The coefficient for Studytime is -0.6208. The odds ratio associated with
+a one-unit change in Studytime is approximately exp(-0.6208) = 0.538.
+For a one-unit decrease in Studytime, the odds of 'high_use' decrease by
+about 1 - 0.538 = 46.2%.
+
+With 95% confidence, the true value of the odds ratio for the intercept
+lies between approximately 0.79 and 2.67. For the study time, the odds
+ratio lies between 0.39 and 0.72, since it is \< 1, there is a
+statistical significance with a negative effect of this variable on the
+high_use.
+
+The residual deviance is smaller than the null deviance, it means the
+model explains the variable high use. The AIC is smaller than the first
+model but not as small as the second model.
+
+```{r}
+logistic_model_studytime_alcohol <- glm(high_use ~ studytime, data = data, family = binomial)
+summary(logistic_model_studytime_alcohol)
+tidy(logistic_model_studytime_alcohol)
+
+# get the coef
+coef(logistic_model_studytime_alcohol) %>% exp()
+
+#Get the odds - exponential of coefficient: 
+exp(coef(logistic_model_studytime_alcohol))
+
+# get the intervals
+confint(logistic_model_studytime_alcohol) %>% exp()
+
+# This plot shows the difference in median and mean for the students who drink a lot or not
+data %>% 
+  ggplot(aes(x= factor(high_use), y= studytime)) +
+  geom_boxplot() +
+  labs(title = "Study time vs the alcohol consumption",
+       x = "High consumption",
+       y = "Study time (from 1 to 4)")
+
+# way more students among students who score they study time around 1 and 2
+data %>%
+  ggplot(aes(x = factor(studytime), fill = factor(high_use))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Study time Behavior and Alcohol Consumption",
+    x = "Study time from 1 to 4",
+    y = "Proportion of students",
+    fill = "High Use of alcohol: True of False"
+  )
+
+# way more score 1 and way less 3 and 4 among students who drink a lot.
+data %>%
+  ggplot(aes(x = factor(high_use), fill = factor(studytime))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Alcohol Consumption and Study time behavior",
+    x = "High Use of alcohol: True of False",
+    y = "Proportion of students",
+    fill = "Study time from 1 to 4"
+  )
+```
+
+### Hypothesis 4: students who chose the school because of its reputation has less risk to have a high consumption of alcohol
+
+Comments about the below code: The p value is 0,022 which tells that
+there is a correlation between the reason to choose a school and the
+consumption of alcohol.
+
+We don't know with the test which reason is the most chosen by the
+students who drink a lot of alcohol vs the ones who don't. Some plots
+can help us identify it (check below).
+
+```{r}
+
+
+# Creating a contingency table
+chi_table_alcohol_reasons <- table((data$high_use), as.factor(data$reason))
+
+# Performing the chi-squared test
+chi_square_test <- chisq.test(chi_table_alcohol_reasons )
+chi_square_test
+
+# Summary of the test
+summary(chi_square_test)
+
+# This show that students who don't drink a lot have chosen their school more for its reputation than the one who drink a lot. For the ones who drink, the reasons home and other are way more important than for the students who don't drink too much. The reason courses seem to be equally important for them.
+data %>%
+  ggplot(aes(x = high_use, fill = reason)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Reason to chose their school and Alcohol Consumption",
+    x = "High Consumption of a",
+    y = "Proportion of students",
+    fill = "High Use of alcohol: True of False"
+  )
+
+data %>%
+  ggplot(aes(x = reason, fill = high_use)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Relationship Between Alcohol Consumption and Reason to chose their school",
+    x = "High Use of alcohol: True of False",
+    y = "Proportion of students",
+    fill = "Reason to choose the school"
+  )
+```
+
+### Other models to test:
+
+By adding each variable together, we can see that the variation in high
+use is better explained (this is because the deviance is decreasing from
+452 to 379).
+
+All three variables (goout, famrel, and studytime) have statistical
+significance in predicting alcohol consumption (high_use).
+
+```{r}
+logistic_model_3var <- glm(high_use ~ goout + famrel + studytime, data = data, family = binomial)
+logistic_model_3var_2 <- glm(high_use ~ goout * famrel * studytime, data = data, family = binomial)
+summary(logistic_model_3var)
+tidy(logistic_model_3var)
+
+# Anova conclusion: The p-value associated with the difference in deviance (Pr(>Chi)) is 0.1362, suggesting that the difference in fit between the two models is not statistically significant
+anova(logistic_model_3var, logistic_model_3var_2, test="LRT")
+
+# when comparing with for instanc: logistic_model_family_alcohol, the residual deviance of logistic_model_3var is better and the p is significant. 
+anova(logistic_model_3var, logistic_model_family_alcohol, test="LRT")
+
+# best model is the logistic_model_3var according to BIC and AIC, because metrics are smaller for this model
+AIC(logistic_model_3var, logistic_model_3var_2)
+BIC(logistic_model_3var, logistic_model_3var_2)
+
+
+```
+
+## question 6: Model 1 (high_use \~ goout + famrel + studytime)
+
+Using the variables which, according to your logistic regression model,
+had a statistical relationship with high/low alcohol consumption,
+explore the predictive power of you model. Provide a 2x2 cross
+tabulation of predictions versus the actual values and optionally
+display a graphic visualizing both the actual values and the
+predictions. Compute the total proportion of inaccurately classified
+individuals (= the training error) and comment on all the results.
+Compare the performance of the model with performance achieved by some
+simple guessing strategy.
+
+```{r}
+# prediction based on the model: logistic_model_3var
+predictions <-  predict(logistic_model_3var, type = "response")
+
+#Create the confusion matrix: 
+table(data$high_use, predictions > 0.5)
+# correct are False false + true true = 235 + 48 = 293
+# wrong are False True and True False = 24 + 63 = 87
+
+# Probability of miss classifications  = 87/(293+87) = 23% 
+# odds of miss classification = 87/293 = 30%
+
+# precision: correctly positive among all positives predictions = 0.33%
+precision <- 24 / (24 + 48)
+# recall: correctly positive among all actual positives = 0.28%
+recall <- 24 / (24 + 63)
+# F1 score: 0.30%
+ 2 * (precision * recall) / (precision + recall)
+
+ # Accuracy of always predicting the majority class:  if the majority class is "FALSE," then predicting "FALSE" for every instance would result in a correct prediction rate of 70%
+mean(data$high_use == FALSE)
+
+# Calculate the total proportion of errors is 23.5%. This means my model is a bit better than the majority class which is 70% (30% of non-accuracy).
+mean(data$high_use != (predictions > 0.5))
+
+
+# to conclude, my model is a bit better than using the prediction based on the majority class. But it should be improved for better accuracy!
+```
+
+### Bonus:
+
+I had to look at chat gpt fully for this one. I did not know the method.
+I now understand this method splits the data in 10 data samples and will
+use 9 of them to predict the last one, rotating to test them all. In
+that case, the average of prediction for the different tests is 74.9%
+which is better than the 70% (majority class).
+
+```{r}
+library(caret)
+library(lattice)
+# Define the model formula
+formula <- factor(high_use) ~ goout + famrel + studytime
+
+# Define the number of folds for cross-validation
+num_folds <- 10
+
+# Create a training control with 10-fold cross-validation
+train_control <- trainControl(method = "cv", number = num_folds)
+
+# Train the model using 10-fold cross-validation
+model <- train(formula, data = data, method = "glm", family = binomial, trControl = train_control)
+
+# Get cross-validated results
+results <- model$resample
+str(results)
+
+# Calculate mean prediction error
+mean(results$Accuracy)
+
+
+
+```
