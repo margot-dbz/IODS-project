@@ -1,0 +1,220 @@
+---
+title: "chapter4"
+output: html_document
+date: "2023-11-23"
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1, 2 and 3
+
+### dataset description:
+
+?Boston This research seems to look for correlations between the standard of living, housing quality, and other criteria such as the urban environment, accessibility, and demographics within the Boston area.
+Each row represents data for a specific town and has information about various factors such as crime rate, proportion of non-retail business acres, property tax rates, pupil-teacher ratios, etc.
+This data frame contains the following columns: 
+crim - per capita crime rate by town.
+zn - proportion of residential land zoned for lots over 25,000 sq.ft.
+indus - proportion of non-retail business acres per town.
+chas - Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+nox - nitrogen oxides concentration (parts per 10 million).
+rm - average number of rooms per dwelling.
+age - proportion of owner-occupied units built prior to 1940.
+dis - weighted mean of distances to five Boston employment centres.
+rad - index of accessibility to radial highways.
+tax - full-value property-tax rate per \$10,000.
+ptratio - pupil-teacher ratio by town.
+black - 1000(Bk−0.63) square - Bk is the proportion of blacks by town.
+lstat - lower status of the population (percent).
+medv - median value of owner-occupied homes in \$1000s.
+
+### Data analyzes:
+
+Explore the structure and the dimensions of the dataset.
+Show a graphical overview of the data and show summaries of the variables in the data.
+Describe and interpret the outputs, the distributions of the variables and the relationships between them.
+
+```{r}
+
+library(MASS)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(tidyr)
+
+Boston <- Boston
+# explore the mean, median, min, max per variable
+summary(Boston)
+
+# 506 entries with 14 variables
+dim(Boston)
+
+# Data type: all num or int
+str(Boston)
+
+numeric_vars <- sapply(Boston, is.numeric)
+numeric_data <- Boston[, numeric_vars]
+
+# let's create points plot for each varaible. -> not easy to read
+pairs(Boston)
+
+# Let's analyze the histogram for each variable: 
+gather(Boston) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + 
+  geom_histogram()
+
+# Let's compute a correlation matrix
+matrix_correlation_var <- cor(Boston)
+
+# Visualize correlation matrix as a heatmap
+install.packages("reshape2")
+library(reshape2)
+ggplot(data = melt(matrix_correlation_var), aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0)
+
+```
+
+**Negative relationships between certain variables:** lstat and medv - lower status of population and the median price of homes owned by occupants
+
+lstat and rm - lower status of population and the average of room numbers per home
+
+tax and medv - the percentage at which a property is taxed based on its assessed value and the the median price of homes owned by occupants
+
+dis and lstat - the weighted average distance from each house to these employment centers and the lower status of population
+
+dis and age - the weighted average distance from each house to these employment centers and the percentage or fraction of homes that are owner-occupied and were constructed before the year 1940.
+
+dis and nox - the weighted average distance from each house to these employment centers and nitrogen oxides concentration.
+
+dis and indus - the weighted average distance from each house to these employment centers and the proportion of non-retail business acres per town (manufacturing facilities, industrial parks, office spaces, warehouses etc).
+
+tax and dis - the percentage at which a property is taxed based on its assessed value and the weighted average distance from each house to these employment centers
+
+zn and age - the percentage or fraction of land within residential areas that is for individual lots with a minimum size of over 25,000 square feet and the percentage or fraction of homes that are owner-occupied and were constructed before the year 1940
+
+zn and nox - the percentage or fraction of land within residential areas that is for individual lots with a minimum size of over 25,000 square feet and the nitrogen oxides concentration.
+
+zn and indus: the percentage or fraction of land within residential areas that is for individual lots with a minimum size of over 25,000 square feet and the proportion of non-retail business acres per town (manufacturing facilities, industrial parks, office spaces, warehouses etc).
+
+**Positive relationships between variables** medv and rm - the median price of homes owned by occupants and the average of room numbers per home
+
+tax and indus - the percentage at which a property is taxed based on its assessed value and the proportion of non-retail business acres per town.
+
+tax and nox - the percentage at which a property is taxed based on its assessed value and the nitrogen oxides concentration.
+
+age and indus - the percentage or fraction of homes that are owner-occupied and were constructed before the year 1940 and the proportion of non-retail business acres per town.
+
+age and nox- the percentage or fraction of homes that are owner-occupied and were constructed before the year 1940 and the nitrogen oxides concentration.
+
+nox and indus - the nitrogen oxides concentration and the proportion of non-retail business acres per town.
+
+--\> tests in my model: sltat, medv, rm, tax, dis, age, nox, indus, zn
+
+### test some models based on the dataset and observed correlation
+
+```{r}
+library(car)
+model1 <-  glm(lstat ~ medv + dis + rm,data=Boston)
+model2 <-  glm(medv ~ rm + tax + lstat ,data=Boston)
+
+# all the VIF are between 1 and 2.1 which is ok. It suggest a low multicollinearity and imply that the variance of the estimated coefficients is not significantly inflated due to collinearity
+vif(model1)
+vif(model2)
+
+#let’s calculate the corresponding ODDS ratios and confidence intervals (95%):
+OR1 <- coef(model1) %>% exp
+OR2 <- coef(model2) %>% exp
+CI1 <- confint(model1) %>% exp
+CI2 <- confint(model2) %>% exp
+
+# the confidence interval for an odds ratio doesn't span 1 = there's a statistically significant effect for both models
+cbind(OR1, CI1) 
+cbind(OR2, CI2)
+
+library(finalfit)
+dependent <- "lstat"
+explanatory_multi <- c("dis", "medv","rm")
+Boston %>% 
+  or_plot(dependent, explanatory_multi,
+          breaks = c(0.5, 1, 2, 5, 10, 25),
+          table_text_size = 3.5,
+          title_text_size = 16)
+
+# the residual deviance is way smaller than the null deviance. It indicates a reasonably good fit of the model to the data.
+summary(model1)
+# medv and rm also influences each other, so let's modify the model a bit
+model11 <-  glm(lstat ~ medv + dis + rm + rm * medv ,data=Boston)
+summary(model11)
+# same for this one, residual deviance is way smaller than the null deviance. 
+summary(model2)
+```
+
+## Question 4
+standardizing the data:
+Variables often have different scales and units, making direct comparisons challenging. Standardization brings all variables to a common scale, allowing for fair comparisons between different variables.It makes the distribution of each variable more consistent, with a mean of 0 and a standard deviation of 1. This normalization aids in interpreting coefficients and comparing the relative importance of different predictors in regression.Standardizing ensures that each variable contributes equally to these techniques, preventing one variable from dominating the analysis due to its scale. It allows easier comparison of the magnitude of the effect of each variable on the outcome. Finally it can mitigate issues related to multicollinearity in regression analysis by putting variables on a similar scale, reducing the impact of differing scales on regression coefficients.
+
+Standardize the dataset and print out summaries of the scaled data. 
+str and summary - How did the variables change? 
+Create a categorical variable of the crime rate in the Boston dataset (from the scaled crime rate). Use the quantiles as the break points in the categorical variable. 
+Drop the old crime rate variable from the dataset. 
+Divide the dataset to train and test sets, so that 80% of the data belongs to the train set.
+
+```{r}
+# select numerical values
+Boston_numeric_cols <- Boston[, sapply(Boston, is.numeric)]
+
+# The scale() to standardize and transform the data to have a mean of 0 and a standard deviation of 1.
+scaled_boston <- scale(Boston_numeric_cols)
+
+# convert to a data frame
+scaled_table_boston <- as.data.frame(scaled_boston)
+
+#how did the data change? Mean is now 0 so it has worked
+summary(scaled_table_boston)
+
+
+# use the cut function to create categorical variables based on intervals or breaks in a numerical variable. We do it for the crim variable from 0 to 0.25 to 0.50 to 0.75 to 1 (quantiles). Add labels for each category. 
+# include.lowest = TRUE is to ensure there is no NA category.
+quantiles <- quantile(Boston$crim, probs = seq(0, 1, by = 0.25), na.rm = TRUE)
+interval_labels <- c("premier_quantil", "second_quantil", "third_quantil", "fourth_quantil")  
+
+scaled_table_boston$quantiles_crime <- cut(Boston$crim, quantiles, labels= interval_labels,include.lowest = TRUE)
+  
+# drop the former column crim and create a new table
+Boston_new <- scaled_table_boston %>% 
+  select(-crim)
+
+# We need 80% of the rows from total rows
+train_size <- round(0.8 * nrow(Boston_new))
+
+# Select a sample randomly among the dataset 80%
+train_set <- sample(seq_len(nrow(Boston_new)), size = train_size)
+
+# Create training and testing subsets
+train_data <- Boston_new[train_set, ]
+test_data <- Boston_new[-train_set, ]
+
+
+```
+
+### Question 5: 
+Fit the linear discriminant analysis on the train set. Use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables. Draw the LDA (bi)plot. (0-3 points)
+
+```{r}
+# check the impact of each variable on a categorical variable (quantiles_crime)
+# each quantils are approximately equal 25%
+# LD1 explains 96% of the model
+linear <- lda(quantiles_crime~., train_data)
+linear
+
+
+```
+Notes: Positive/Negative Coefficients of linear: Positive coefficients indicate that higher values of that variable contribute to a higher score in that particular discriminant, while negative coefficients suggest the opposite.
+The larger the magnitude of the coefficient, the greater the impact of that variable on the discriminant.
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
