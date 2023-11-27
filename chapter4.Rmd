@@ -15,23 +15,39 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### dataset description:
 
-?Boston This research seems to look for correlations between the standard of living, housing quality, and other criteria such as the urban environment, accessibility, and demographics within the Boston area.
+The Boston research seems to look for correlations between the standard of living, housing quality, and other criteria such as the urban environment, accessibility, and demographics within the Boston area.
+
 Each row represents data for a specific town and has information about various factors such as crime rate, proportion of non-retail business acres, property tax rates, pupil-teacher ratios, etc.
-This data frame contains the following columns: 
-crim - per capita crime rate by town.
-zn - proportion of residential land zoned for lots over 25,000 sq.ft.
-indus - proportion of non-retail business acres per town.
-chas - Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
-nox - nitrogen oxides concentration (parts per 10 million).
-rm - average number of rooms per dwelling.
-age - proportion of owner-occupied units built prior to 1940.
-dis - weighted mean of distances to five Boston employment centres.
-rad - index of accessibility to radial highways.
-tax - full-value property-tax rate per \$10,000.
-ptratio - pupil-teacher ratio by town.
-black - 1000(Bk−0.63) square - Bk is the proportion of blacks by town.
-lstat - lower status of the population (percent).
-medv - median value of owner-occupied homes in \$1000s.
+
+This data frame contains the following columns:
+
+-   crim - per capita crime rate by town.
+
+-   zn - proportion of residential land zoned for lots over 25,000 sq.ft.
+
+-   indus - proportion of non-retail business acres per town.
+
+-   chas - Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+
+-   nox - nitrogen oxides concentration (parts per 10 million).
+
+-   rm - average number of rooms per dwelling.
+
+-   age - proportion of owner-occupied units built prior to 1940.
+
+-   dis - weighted mean of distances to five Boston employment centres.
+
+-   rad - index of accessibility to radial highways.
+
+-   tax - full-value property-tax rate per \$10,000.
+
+-   ptratio - pupil-teacher ratio by town.
+
+-   black - 1000(Bk−0.63) square Bk is the proportion of blacks by town.
+
+-   lstat - lower status of the population (percent).
+
+-   medv - median value of owner-occupied homes in \$1000s.
 
 ### Data analyzes:
 
@@ -47,6 +63,8 @@ library(ggplot2)
 library(GGally)
 library(tidyr)
 
+setwd("/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project")
+
 Boston <- Boston
 # explore the mean, median, min, max per variable
 summary(Boston)
@@ -57,10 +75,7 @@ dim(Boston)
 # Data type: all num or int
 str(Boston)
 
-numeric_vars <- sapply(Boston, is.numeric)
-numeric_data <- Boston[, numeric_vars]
-
-# let's create points plot for each varaible. -> not easy to read
+# let's create points plot for each variable. -> not easy to read as too many variables
 pairs(Boston)
 
 # Let's analyze the histogram for each variable: 
@@ -71,7 +86,6 @@ gather(Boston) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") +
 matrix_correlation_var <- cor(Boston)
 
 # Visualize correlation matrix as a heatmap
-install.packages("reshape2")
 library(reshape2)
 ggplot(data = melt(matrix_correlation_var), aes(Var1, Var2, fill = value)) +
   geom_tile() +
@@ -79,7 +93,9 @@ ggplot(data = melt(matrix_correlation_var), aes(Var1, Var2, fill = value)) +
 
 ```
 
-**Negative relationships between certain variables:** lstat and medv - lower status of population and the median price of homes owned by occupants
+**according to the matrix - Negative relationships between certain variables:**
+
+lstat and medv - lower status of population and the median price of homes owned by occupants
 
 lstat and rm - lower status of population and the average of room numbers per home
 
@@ -99,9 +115,11 @@ zn and age - the percentage or fraction of land within residential areas that is
 
 zn and nox - the percentage or fraction of land within residential areas that is for individual lots with a minimum size of over 25,000 square feet and the nitrogen oxides concentration.
 
-zn and indus: the percentage or fraction of land within residential areas that is for individual lots with a minimum size of over 25,000 square feet and the proportion of non-retail business acres per town (manufacturing facilities, industrial parks, office spaces, warehouses etc).
+zn and indus - the percentage or fraction of land within residential areas that is for individual lots with a minimum size of over 25,000 square feet and the proportion of non-retail business acres per town (manufacturing facilities, industrial parks, office spaces, warehouses etc).
 
-**Positive relationships between variables** medv and rm - the median price of homes owned by occupants and the average of room numbers per home
+**Positive relationships between variables**
+
+medv and rm - the median price of homes owned by occupants and the average of room numbers per home
 
 tax and indus - the percentage at which a property is taxed based on its assessed value and the proportion of non-retail business acres per town.
 
@@ -115,7 +133,7 @@ nox and indus - the nitrogen oxides concentration and the proportion of non-reta
 
 --\> tests in my model: sltat, medv, rm, tax, dis, age, nox, indus, zn
 
-### test some models based on the dataset and observed correlation
+### Test some models based on the dataset and observed correlation
 
 ```{r}
 library(car)
@@ -136,33 +154,27 @@ CI2 <- confint(model2) %>% exp
 cbind(OR1, CI1) 
 cbind(OR2, CI2)
 
-library(finalfit)
-dependent <- "lstat"
-explanatory_multi <- c("dis", "medv","rm")
-Boston %>% 
-  or_plot(dependent, explanatory_multi,
-          breaks = c(0.5, 1, 2, 5, 10, 25),
-          table_text_size = 3.5,
-          title_text_size = 16)
-
 # the residual deviance is way smaller than the null deviance. It indicates a reasonably good fit of the model to the data.
 summary(model1)
+
 # medv and rm also influences each other, so let's modify the model a bit
 model11 <-  glm(lstat ~ medv + dis + rm + rm * medv ,data=Boston)
 summary(model11)
+
 # same for this one, residual deviance is way smaller than the null deviance. 
 summary(model2)
 ```
 
 ## Question 4
-standardizing the data:
-Variables often have different scales and units, making direct comparisons challenging. Standardization brings all variables to a common scale, allowing for fair comparisons between different variables.It makes the distribution of each variable more consistent, with a mean of 0 and a standard deviation of 1. This normalization aids in interpreting coefficients and comparing the relative importance of different predictors in regression.Standardizing ensures that each variable contributes equally to these techniques, preventing one variable from dominating the analysis due to its scale. It allows easier comparison of the magnitude of the effect of each variable on the outcome. Finally it can mitigate issues related to multicollinearity in regression analysis by putting variables on a similar scale, reducing the impact of differing scales on regression coefficients.
 
-Standardize the dataset and print out summaries of the scaled data. 
-str and summary - How did the variables change? 
-Create a categorical variable of the crime rate in the Boston dataset (from the scaled crime rate). Use the quantiles as the break points in the categorical variable. 
-Drop the old crime rate variable from the dataset. 
-Divide the dataset to train and test sets, so that 80% of the data belongs to the train set.
+Standardizing the data.
+Variables often have different scales and units, making direct comparisons challenging.
+Standardization brings all variables to a common scale, allowing for fair comparisons between different variables.
+It makes the distribution of each variable more consistent, with a mean of 0 and a standard deviation of 1.
+This normalization aids in interpreting coefficients and comparing the relative importance of different predictors in regression.
+Standardizing ensures that each variable contributes equally to these techniques, preventing one variable from dominating the analysis due to its scale.
+It allows easier comparison of the magnitude of the effect of each variable on the outcome.
+Finally it can mitigate issues related to multicollinearity in regression analysis by putting variables on a similar scale, reducing the impact of differing scales on regression coefficients.
 
 ```{r}
 # select numerical values
@@ -174,17 +186,17 @@ scaled_boston <- scale(Boston_numeric_cols)
 # convert to a data frame
 scaled_table_boston <- as.data.frame(scaled_boston)
 
-#how did the data change? Mean is now 0 so it has worked
+# how did the data change? Mean is now 0 so it has worked;
 summary(scaled_table_boston)
 
-
-# use the cut function to create categorical variables based on intervals or breaks in a numerical variable. We do it for the crim variable from 0 to 0.25 to 0.50 to 0.75 to 1 (quantiles). Add labels for each category. 
+# use the cut function to create categorical variables based on intervals or breaks in a numerical variable. We do this process for the crim variable from 0 to 0.25 to 0.50 to 0.75 to 1 (quantiles). Add labels for each category. 
 # include.lowest = TRUE is to ensure there is no NA category.
 quantiles <- quantile(Boston$crim, probs = seq(0, 1, by = 0.25), na.rm = TRUE)
 interval_labels <- c("premier_quantil", "second_quantil", "third_quantil", "fourth_quantil")  
 
 scaled_table_boston$quantiles_crime <- cut(Boston$crim, quantiles, labels= interval_labels,include.lowest = TRUE)
-  
+# Notes: Quantiles derived from numeric values can be considered categorical or continuous. When quantiles represent discrete categories or bins that divide a continuous variable into distinct groups, they are treated as categorical (e. small, medium, big). If quantiles represent numeric values that indicate the position or value relative to the distribution of a continuous variable (e.g., the 25th percentile, median, 75th percentile), they are considered continuous.
+
 # drop the former column crim and create a new table
 Boston_new <- scaled_table_boston %>% 
   select(-crim)
@@ -199,22 +211,168 @@ train_set <- sample(seq_len(nrow(Boston_new)), size = train_size)
 train_data <- Boston_new[train_set, ]
 test_data <- Boston_new[-train_set, ]
 
-
 ```
 
-### Question 5: 
-Fit the linear discriminant analysis on the train set. Use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables. Draw the LDA (bi)plot. (0-3 points)
+## Question 5:
+
+Fit the linear discriminant analysis on the train set.
+Use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables.
+Draw the LDA (bi)plot.
+
+Linear Discriminant Analysis (LDA) can be quite useful in various real-life scenarios where classification or dimensionality reduction is required such as: Marketing and Customer Segmentation, product quality control, credit scoring.
+
+It is ideal when we have multiple variables that can help us categorize each entry in one specific group where all others will have similar mean, and variance.
+The goal is to predict the categorical outcome or class based on a set of predictors.
+
+LDA transforms the original variables into a smaller set of new variables, known as linear discriminants.
+These new variables (linear discriminants) are created in a way that maximizes the separation between different categories or classes in the data.By using the information captured in the linear discriminants, LDA helps in accurately assigning new observations (data points) to their respective categories or classes.
+LDA takes variables, combines them in a smart way to create new variables that are helpful for understanding differences between groups or categories, and then uses this understanding to categorize or classify new data based on what it has learned.
+This makes it useful for both simplifying data and making predictions about categories in that data.
+
+LDA calculates the mean and variance for each predictor within each class or category in the target variable.
+It finds coefficients for these combinations by considering differences in means between classes and assumes equal variances for each predictor within classes.
+It assumes that the data approximately follows a normal distribution.
 
 ```{r}
 # check the impact of each variable on a categorical variable (quantiles_crime)
-# each quantils are approximately equal 25%
-# LD1 explains 96% of the model
-linear <- lda(quantiles_crime~., train_data)
-linear
+# each quantiles are approximately equal 25%
+# LD1 explains 96% of the model. When LD1 captures 96% of the variance, it suggests that LD1 effectively separates the classes or groups in the data based on their mean differences and variance. Within LD1, data points are grouped together in a way that maximizes the separation between classes while minimizing the variation within each class.
+# Positive coefficients indicate that higher values of that variable contribute to a higher score in that particular discriminant, while negative coefficients suggest the opposite. The larger the magnitude of the coefficient, the greater the impact of that variable on the discriminant.
+
+library(MASS)
+
+# Fit LDA on the train set - LDA is a statistical method used for classification. It fits an LDA model using the train_data, where quantiles_crime is the target variable to predict based on the other variables
+lda_model <- lda(quantiles_crime ~ ., data = train_data)
+
+# Predict on the test set by using the function predict to apply the model created from the train_data to test_data -> the idea here is to predict the class labels for this test_data
+lda_pred <- predict(lda_model, test_data)$class # class extract the predicted class labels
+
+# actual crime quantiles
+actual_crime_categories <- test_data$quantiles_crime
+
+# Extract LD scores from the LDA model's predictions
+lda_scores <- predict(lda_model, test_data)$x # x accesses the matrix of posterior probabilities or scores associated with each class for the observations in the test_data.
+
+# Create a dataframe with LD scores from first 2 columns of the lda_score and the predicted classes. Combining LD1, LD2, and the predicted classes for visualization. In many cases, visualizing beyond LD1 and LD2 might become complex to display effectively in two-dimensional plots. LD1 and LD2 are typically chosen for visualization as they capture the most discrimination power while allowing for a clearer visualization on a 2D plot.
+plot_data <- data.frame(LD1 = lda_scores[, 1], LD2 = lda_scores[, 2], prediction_crime_quantile = as.factor(lda_pred))
+
+plot_data
+
+# Create a scatterplot of LD1 and LD2
+plot_LDA <- ggplot(plot_data, aes(x = LD1, y = LD2, color = prediction_crime_quantile)) +
+  geom_point() +
+  labs(title = "LDA Biplot with Predicted Crime Quantiles")
+
+plot_LDA
+
+# adding real values - comparison of actual vs predicted values in test_data
+realVsPred_plot <- plot_LDA + 
+  geom_point(aes(color = actual_crime_categories), size = 4, alpha = 0.1) +
+  labs(color = "Real Quantiles of Crime")
+
+realVsPred_plot
+
+# the accuracy of predictions using test data
+accuracy <- mean(lda_pred == test_data$quantiles_crime)
+print(paste("Accuracy of LDA model on test data:", round(accuracy * 100, 2), "%"))
+
+```
+
+## Question 6:
+
+Save the crime categories from the test set and then remove the categorical crime variable from the test dataset.
+Then predict the classes with the LDA model on the test data.
+Cross tabulate the results with the crime categories from the test set.
+Comment on the results.
+(0-3 points)
+
+```{r}
+
+# save the crime data: 
+actual_crime_categories <- test_data$quantiles_crime
+
+# Remove the categorical crime variable from the test dataset
+test_data_without_crime <- subset(test_data, select = -c(quantiles_crime))
+
+# get the classes based on the model - this was done earlier with lda_pred. so I am a bit confused.
+lda_pred_test <- predict(lda_model, test_data_without_crime)$class
+
+# get the table with the prediction vs actual - results are same between the 2 ways since I did 2 times the same steps. I might have missed something in the requests.
+cross_tab <- table(Predicted = lda_pred_test, Actual = actual_crime_categories)
+cross_tab
+cross_table <- table(Predicted = lda_pred, Actual = actual_crime_categories)
+cross_table
+```
+
+## Question 7:
+
+Reload the Boston dataset and standardize the dataset (we did not do this in the Exercise Set, but you should scale the variables to get comparable distances).
+Calculate the distances between the observations.
+Run k-means algorithm on the dataset.
+Investigate what is the optimal number of clusters and run the algorithm again.
+Visualize the clusters (for example with the pairs() or ggpairs() functions, where the clusters are separated with colors) and interpret the results.
+(0-4 points)
+
+```{r}
+
+# Boston is reload
+Boston_load <- Boston
+
+# scale of Boston
+Boston_scaled <- scale(Boston_load)
+
+# Calculate distance betwwen scaled data points: 
+distances <- dist(Boston_scaled)
+
+# Visualize the distances using fviz_dist()
+library(factoextra)
+fviz_dist(distances, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+
+                                    
+# k mean: The k-means algorithm groups observations into clusters based on their similarity, aiming to minimize the variation within clusters while maximizing the variation between clusters. We need to define the number of clusters we need to do the kmean analyse. 
+
+# Elbow Method to find optimal number of clusters: Calculate the Within-Cluster-Sum of Squared Errors (WSS) for different values of k, and choose the k for which WSS becomes first starts to diminish. In the plot of WSS-versus-k, this is visible as an elbow.
+# The Squared Error for each point is the square of the distance of the point from its representation i.e. its predicted cluster center.
+# The WSS score is the sum of these Squared Errors for all the points.
+wss <- numeric(10)  # Initialize within-cluster sum of squares vector
+for (i in 1:10) {
+  kmeans_model <- kmeans(Boston_scaled, centers = i, nstart = 10)
+  wss[i] <- kmeans_model$tot.withinss  # Store within-cluster sum of squares
+}
+
+# Plotting the Elbow Method
+plot(1:10, wss, type = "b", xlab = "Number of Clusters", ylab = "Within-cluster Sum of Squares", main = "Elbow Method")
+
+# or we can use the direct function for the Elbow method
+kmeans_model_optimal2 <- fviz_nbclust(Boston_scaled, kmeans, method = "wss")
+# or we can use the silhuette method
+fviz_nbclust(Boston_scaled, kmeans, method = "silhouette")
+
+# Visualize clusters using pairs() or ggpairs()
+pairs(Boston_scaled, col = kmeans_model$cluster)
+
+k <- 2  # 2 seems to be the best option according to the Elbow Method and the silhouette method 
+
+#Kmean model:
+kmeans_model <- kmeans(Boston_scaled, centers = k, nstart = 25)
+
+cluster_assignments <- kmeans_model$cluster
+
+# visualize the clusters thanks to fviz_cluster function
+fviz_cluster(kmeans_model, data = Boston_scaled)
+library(GGally)
+
+# Combine the scaled data with the cluster assignments (cluster 1 or 2)
+clustered_data <- cbind(as.data.frame(Boston_scaled), Cluster = as.factor(cluster_assignments))
+
+# Visualize clusters using ggpairs()
+ggpairs(clustered_data, aes(color = Cluster))
+
+# Mean for each cluster and variable:
+clustered_data %>%
+  mutate(Cluster = kmeans_model$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
 
 
 ```
-Notes: Positive/Negative Coefficients of linear: Positive coefficients indicate that higher values of that variable contribute to a higher score in that particular discriminant, while negative coefficients suggest the opposite.
-The larger the magnitude of the coefficient, the greater the impact of that variable on the discriminant.
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
