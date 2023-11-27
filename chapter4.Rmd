@@ -198,8 +198,10 @@ scaled_table_boston$quantiles_crime <- cut(Boston$crim, quantiles, labels= inter
 # Notes: Quantiles derived from numeric values can be considered categorical or continuous. When quantiles represent discrete categories or bins that divide a continuous variable into distinct groups, they are treated as categorical (e. small, medium, big). If quantiles represent numeric values that indicate the position or value relative to the distribution of a continuous variable (e.g., the 25th percentile, median, 75th percentile), they are considered continuous.
 
 # drop the former column crim and create a new table
-Boston_new <- scaled_table_boston %>% 
-  select(-crim)
+Boston_new <- scaled_table_boston 
+# For some reasons, it  does not knit via the index file when I have this "select" function. However, the Knit works normally when I do it from the chapter 4 with or without this function. Therefore I have to remove it to be able to knit it via the index.rmd.
+# In order to remove the crim, i do as below. 
+#%>%select(-crim, everything())
 
 # We need 80% of the rows from total rows
 train_size <- round(0.8 * nrow(Boston_new))
