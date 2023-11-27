@@ -9,10 +9,6 @@ editor_options:
 
 # Chapter 4 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## Question 1, 2 and 3
 
 ### dataset description:
@@ -199,11 +195,9 @@ interval_labels <- c("premier_quantil", "second_quantil", "third_quantil", "four
 scaled_table_boston$quantiles_crime <- cut(Boston$crim, quantiles, labels= interval_labels,include.lowest = TRUE)
 # Notes: Quantiles derived from numeric values can be considered categorical or continuous. When quantiles represent discrete categories or bins that divide a continuous variable into distinct groups, they are treated as categorical (e. small, medium, big). If quantiles represent numeric values that indicate the position or value relative to the distribution of a continuous variable (e.g., the 25th percentile, median, 75th percentile), they are considered continuous.
 
-# drop the former column crim and create a new table
+# drop the former column crim and create a new table. I have to hide this since it does not allow me to knit my document for some reasons.
 Boston_new <- scaled_table_boston 
-# For some reasons, it  does not knit via the index file when I have this "select" function. However, the Knit works normally when I do it from the chapter 4 with or without this function. Therefore I have to remove it to be able to knit it via the index.rmd.
-# In order to remove the crim, i do as below. 
-#%>%select(-crim, everything())
+# %>% select(-crim, everything())
 
 # We need 80% of the rows from total rows
 train_size <- round(0.8 * nrow(Boston_new))
@@ -378,5 +372,22 @@ clustered_data %>%
   group_by(Cluster) %>%
   summarise_all("mean")
 
+
+```
+
+
+
+```{r}
+
+model_predictors <- select(train_data, -quantiles_crime)
+# check the dimensions
+dim(model_predictors)
+dim(lda_model$scaling)
+# matrix multiplication
+matrix_product <- as.matrix(model_predictors) %*% lda_model$scaling
+matrix_product <- as.data.frame(matrix_product)
+library(plotly)
+
+plot_ly(x = matrix_product$LD1, y = matrix_product$LD2, z = matrix_product$LD3, type= 'scatter3d', mode='markers')
 
 ```
