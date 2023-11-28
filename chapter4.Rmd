@@ -76,7 +76,7 @@ str(Boston)
 # let's create points plot for each variable. -> not easy to read as too many variables
 pairs(Boston)
 
-# Let's analyze the histogram for each variable: 
+# Let's analyze the histogram for each variable. To use the key facet wrap that will draw one chart per key, we need to have a table with 2 columns: the keys which are all the variables and then the metric. 
 gather(Boston) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + 
   geom_histogram()
 
@@ -195,9 +195,8 @@ interval_labels <- c("premier_quantil", "second_quantil", "third_quantil", "four
 scaled_table_boston$quantiles_crime <- cut(Boston$crim, quantiles, labels= interval_labels,include.lowest = TRUE)
 # Notes: Quantiles derived from numeric values can be considered categorical or continuous. When quantiles represent discrete categories or bins that divide a continuous variable into distinct groups, they are treated as categorical (e. small, medium, big). If quantiles represent numeric values that indicate the position or value relative to the distribution of a continuous variable (e.g., the 25th percentile, median, 75th percentile), they are considered continuous.
 
-# drop the former column crim and create a new table. I have to hide this since it does not allow me to knit my document for some reasons.
-Boston_new <- scaled_table_boston 
-# %>% select(-crim, everything())
+# drop the former column crim and create a new table. 
+Boston_new <- scaled_table_boston %>% dplyr::select(-crim)
 
 # We need 80% of the rows from total rows
 train_size <- round(0.8 * nrow(Boston_new))
@@ -290,7 +289,7 @@ Comment on the results.
 actual_crime_categories <- test_data$quantiles_crime
 
 # Remove the categorical crime variable from the test dataset
-test_data_without_crime <- subset(test_data, select = -c(quantiles_crime))
+test_data_without_crime <- test_data %>% dplyr::select(-quantiles_crime)
 
 # get the classes based on the model - this was done earlier with lda_pred. so I am a bit confused.
 lda_pred_test <- predict(lda_model, test_data_without_crime)$class
@@ -379,7 +378,8 @@ clustered_data %>%
 
 ```{r}
 
-model_predictors <- select(train_data, -quantiles_crime)
+model_predictors <- train_data %>% dplyr::select(-quantiles_crime)
+
 # check the dimensions
 dim(model_predictors)
 dim(lda_model$scaling)
