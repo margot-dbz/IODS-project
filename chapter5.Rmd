@@ -9,10 +9,6 @@ editor_options:
 
 # Chapter 5
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## Question 1
 
 Move the country names to rownames (see Exercise 5.5).
