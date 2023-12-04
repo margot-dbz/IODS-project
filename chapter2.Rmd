@@ -10,7 +10,7 @@ editor_options:
 date()
 
 # set directory
-setwd("~/Desktop/Open data with R 2023/IODS-project")
+setwd("/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project")
 ```
 
 **Thoughts about this week 2:**

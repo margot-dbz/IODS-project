@@ -1,0 +1,168 @@
+---
+title: "chapter5"
+output: html_document
+date: "2023-11-30"
+---
+
+# Chapter 5
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+Move the country names to rownames (see Exercise 5.5). Show a graphical overview of the data and show summaries of the variables in the data. Describe and interpret the outputs, commenting on the distributions of the variables and the relationships between them. (0-3 points)
+
+
+```{r}
+
+library(tibble)
+library(readr)
+library(corrplot)
+library(ggplot2)
+library(tidyr)
+library(GGally)
+
+human_new <- read_csv("/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human_new.csv", show_col_types = FALSE)
+
+str(human_new)
+
+# Country is as rownames
+human_new <- column_to_rownames(human_new, "Country")
+
+is.na(human_new)
+
+# histogram per variable
+pivot_longer(human_new, cols = everything()) %>% 
+  ggplot(aes(value)) + facet_wrap("name", scales = "free") + 
+  geom_histogram()
+
+# charts and correlations - data is not very visible
+ggpairs(human_new,lower=list(combo=wrap("facethist",binwidth=0.1)))
+
+# correlation between variables
+
+c <- cor(human_new)
+corrplot(c, method="circle")
+
+```
+HDI, Life exp, edu exp, edu mean  is negatively correlated with GII, Mat mortality, ado birth
+HDI, Life exp; edu exp, edu mean is positively correlated with edu 2 of male and female,
+GII, ado birth and mat mortality are positvely correlated
+GII and math mortality are negatively correlated with edu for female an male
+
+## Question 2
+
+Perform principal component analysis (PCA) on the raw (non-standardized) human data. Show the variability captured by the principal components. Draw a biplot displaying the observations by the first two principal components (PC1 coordinate in x-axis, PC2 coordinate in y-axis), along with arrows representing the original variables. (0-2 points)
+
+
+```{r}
+# pca
+pca_human <- prcomp(human_new)
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human, choices = 1:2)
+
+```
+
+## Question 3
+
+Standardize the variables in the human data and repeat the above analysis. Interpret the results of both analysis (with and without standardizing). Are the results different? Why or why not? Include captions (brief descriptions) in your plots where you describe the results by using not just your variable names, but the actual phenomena they relate to. (0-4 points)
+
+```{r}
+
+# standardize human_new
+scaled_human <- scale(human_new)
+
+# new PCA
+pca_human2 <- prcomp(scaled_human)
+
+# draw a biplot of the principal component representation and the original variables with the scaled data
+biplot(pca_human2, choices = 1:2)
+
+# Question: How to make it readable? what is expected in this question?
+
+# Interpret the results of both analysis (with and without standardizing). Are the results different? Why or why not? Include captions (brief descriptions) in your plots where you describe the results by using not just your variable names, but the actual phenomena they relate to.
+# yes because each variable have different weight in the model, that is why it is necessary to scale / standardize the data
+
+# Let's reduce the dataset with only the last 30 countries and few of the variables. 
+scaled_human2 <- scaled_human %>% tail(n=30)
+scaled_human2 <- as.data.frame(scaled_human2)
+scaled_human2 %>% dplyr::select(HDI,GNI,GII,Edu.Exp,Life.Exp,Mat.Mor,Ado.Birth,Edu2.F,Edu2.M)
+
+pca_human3 <- prcomp(scaled_human2)
+biplot(pca_human3, choices = 1:2)
+```
+
+## Question 4
+Give your personal interpretations of the first two principal component dimensions based on the biplot drawn after PCA on the standardized human data. (0-2 points)
+
+
+```{r}
+
+# Question: How to analyze when we cannot read it well?
+
+```
+
+## Question 5
+The tea data comes from the FactoMineR package and it is measured with a questionnaire on tea: 300 individuals were asked how they drink tea (18 questions) and what are their product's perception (12 questions). In addition, some personal details were asked (4 questions).
+
+Load the tea dataset and convert its character variables to factors:
+
+tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", stringsAsFactors = TRUE)
+Explore the data briefly: look at the structure and the dimensions of the data. Use View(tea) to browse its contents, and visualize the data.
+
+Use Multiple Correspondence Analysis (MCA) on the tea data (or on just certain columns of the data, it is up to you!). Interpret the results of the MCA and draw at least the variable biplot of the analysis. You can also explore other plotting options for MCA. Comment on the output of the plots. (0-4 points) 
+```{r}
+tea_new <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", stringsAsFactors = TRUE)
+view(tea_new)
+str(tea_new)
+# variables are factorial, except few ones. let's map the different values with MCA
+
+# But first let's keep only the categorical variables. We could also change the variables to categorical ones.
+tea_new_2 <- tea_new %>% dplyr::select(-breakfast,-age)
+
+library(ggplot2)
+pivot_longer(tea_new_2, cols = everything()) %>% 
+  ggplot(aes(value)) + facet_wrap("name", scales = "free") + 
+  geom_bar() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+# too many variables, it is hard to see. 
+# Question: how to select the variables we want to use? should they have less correlation?
+
+
+library(FactoMineR)
+mca <- MCA(tea_new_2, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA - visualize many categories from many variables, all at once to see the ones that fit together as the same behavior. e.g unpackages and tea shop will belong to the same type of user.
+plot(mca, invisible=c("ind"), graph.type = "classic")
+
+# let's now choose only few variables: SELECT OTHER VARIABLES, QUESTION: ow to analyzes the correlation between only categorical variables to then select the ones i want to study with the mca
+tea_new_2 %>%
+  pivot_longer(cols = everything()) %>%
+  ggplot(aes(x = value)) +
+  facet_wrap(~ name, scales = "free") +
+  geom_bar() +
+  labs(title = "Distribution of Categorical Variables")
+
+# Select smaller dataset to do the mca analyze
+str(tea_new)
+tea_smaller <- tea_new %>% dplyr::select(exciting,relaxing,effect.on.health,sex,where,sugar)
+
+# model
+mca2 <- MCA(tea_smaller, graph = FALSE)
+
+# summary of the model
+summary(mca2)
+
+# visualize MCA 
+plot(mca2, invisible=c("ind"), graph.type = "classic")
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

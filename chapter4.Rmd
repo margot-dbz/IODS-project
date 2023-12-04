@@ -383,6 +383,7 @@ model_predictors <- train_data %>% dplyr::select(-quantiles_crime)
 # check the dimensions
 dim(model_predictors)
 dim(lda_model$scaling)
+
 # matrix multiplication
 matrix_product <- as.matrix(model_predictors) %*% lda_model$scaling
 matrix_product <- as.data.frame(matrix_product)

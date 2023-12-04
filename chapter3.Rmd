@@ -8,7 +8,7 @@ editor_options:
 
 ```{r}
 
-setwd("~/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project")
+setwd("/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project")
 
 library(broom)
 library(ggplot2)

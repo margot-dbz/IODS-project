@@ -24,6 +24,7 @@ data.frame(human[-1], comp = complete.cases(human))
 
 # keep only the rows with the True in the last column of the data frame added with complete.cases
 human_ <- filter(human,complete.cases(human))
+is.na(human_)
 
 # Question 4: Remove the observations which relate to regions instead of countries.
 # define the last indice we want to keep
@@ -34,6 +35,6 @@ nrow(human)
 nrow(human_)
 
 # Question 5: Save the data human in my folder
-write_csv(human_, "/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human.csv")
+write_csv(human_, "/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human_new.csv")
 
 
