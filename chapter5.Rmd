@@ -59,13 +59,14 @@ corrplot(c, method="circle")
 
 ### Commenting distributions and relationships between them
 
-The distribution of these variables appears to deviate from a normal distribution.
+In majority, the distribution of these variables appears to deviate from a normal distribution.
 
-HDI, Life expectancy, education exp, education mean is negatively correlated with GII, Mat mortality, adolescent birth.
-GII and maternity mortality are also negatively correlated with education for female and male.
+Life expectancy, Education F/M, Education exp, GNI are negatively correlated with Maternal mortality and Adolescent birth.
 
-HDI, Life expectancy, education exp, education mean is positively correlated with education of male and female.
-GII, adolescent birth and maternity mortality are also positively correlated.
+Education F/M is positively correlated with Life expectancy, education exp, and GNI.
+Life expectancy is positively correlated with Education exp, and GNI. 
+Education exp is also positively correlated with GNI. 
+Maternal mortality is correlated to adolescent birth. 
 
 \> This observed correlations appears coherent, highlighting logical relationships between the various variables.
 
@@ -78,7 +79,7 @@ Draw a biplot displaying the observations by the first two principal components 
 
 ### Non-standardized PCA
 
-```{r fig.height=20, fig.width=20}
+```{r fig.height=10, fig.width=10}
 
 # PCA
 pca_human <- prcomp(human_new)
@@ -117,12 +118,12 @@ biplot(pca_human2, choices = 1:2,
 
 PC1 - Country Socio-Economic Development.
 This component shows multiple socio-economic factors contributing to overall country development.
-It includes on one side, variables like Gross National Income, Human Development Index, Life Expectancy, Education, and on the other side, variables like Adolescent birth rate, Maternal mortality ratio.
+It includes on one side, variables like Gross National Income, Life Expectancy, Education, and on the other side, variables like Maternal mortality and adolescent birth rate.
 This axis reflects a broad aspect of a country's overall progress and development.
 
 PC2 - Female Empowerment and Socio-Economic Development by Women.
-This component specifically highlights aspects related to female empowerment, participation, and their impact on socio-economic development.
-It might incorporate variables such as Female Education, Female Labor Force Participation.
+This component specifically highlights aspects related to female empowerment, participation (work or parli), and their impact on socio-economic development.
+
 
 ## Question 4 - interpret the PCA
 
@@ -140,18 +141,14 @@ The direction of the arrow indicates which way the variable is correlated with t
 The length of the arrow represents the strength of the variable's contribution to that principal component.
 Longer arrows indicate a stronger influence on that component.
 
-On the left side of the chart, countries appear more developed, characterized by higher values in key development indicators such as Gross National Income, Life Expectancy at Birth, Human Development Index, Life Expectancy in Education, and Female Population with Secondary Education.
-These variables has significant influence, suggesting that the variables impact positively each other.
-As these metrics increase, the level of development tends to be higher.
-We can find in this area many European/Western countries.
-Some of them also have the characteristics of higher labor rate among females and a closer rate when compared to the labor rate for males (e.g Iceland, Norway, Denmark).
-Conversely, countries like Qatar, Bahrain, UAE, and Saudi Arabia display a relatively good development level but possess lower female labor participation, impacting the overall women development and freedom.
+On the left side of the chart, countries appear more developed, characterized by higher values in key development indicators such as Gross National Income, Life Expectancy at Birth, Life Expectancy in Education. These variables has significant influence, suggesting that the variables impact positively each other. As these metrics increase, the level of development tends to be higher. We can find in this subgroup many developed Western and Asian countries (e.g Switzerland, United States, Italy, Australia, Japan, Denmark,etc.).
+Some of them also have the characteristics of high labor rate of Female vs male which indicates a better situation for Women (e.g Iceland, Norway, Finland Sweden, Denmark).
+Conversely, countries like Qatar, Bahrain, UAE, and Saudi Arabia display a relatively good development level but possess lower female labor and parliament participation, impacting the overall women development and freedom.
+Some countries in the middle or even on the right of the PC1 do particularly well with the metrics about women development and freedom, such as Bolivia, Namibia, Burundi.
 
-On the opposite side of the chart, variables such as Adolescent Birth Rate, Maternal Mortality Ratio, Male Labor Force Participation Rate, HDI Rank, and GNI Rank (where higher ranks denote lower HDI or GNI) portray countries facing more challenging situations.
-Higher values in these variables correlate with less favorable conditions in a country.
-As these indicators rise, the situation tends to be less favorable.
-These countries, primarily from the Global South, such as Burkina Faso, Haiti, Niger, and Sierra Leone, face lower overall development.
-Women situations also vary based on their positioning along PC2, reflecting the diverse and inequal experiences of women in different countries.
+On the opposite side of the chart, variables such as Adolescent Birth Rate, Maternal Mortality Ratio, portray countries facing more challenging situations.
+Higher values in these variables correlate with less favorable conditions in a country. These countries, primarily from the Global South, such as Central African Republic, Congo, Burkina Faso face lower overall development.
+Women situations also vary based on their positioning along PC1, reflecting the diverse and unequal experiences of women in different countries (Afghanistan appears to have a worst situation for Women than in Zimbabwe for instance).
 
 ## Question 5
 
@@ -227,15 +224,15 @@ summary(mca2)
 summary(mca3)
 
 # visualize MCA 
-plot(mca2, invisible=c("ind"), graph.type = "classic")
-plot(mca3, invisible=c("ind"), graph.type = "classic")
+plot(mca2, invisible=c("ind"), graph.type = "classic",col.var = rainbow(ncol(tea_new_2)))
+plot(mca3, invisible=c("ind"), graph.type = "classic",col.var = rainbow(ncol(tea_new_2)))
 
 ```
 
 ### Conclusion of MCAs
 
 MCA 2: The categories "tea shop," "upscale price," and "unpackaged" appear closely related, indicating they collectively represent a particular type of behavior or consumer preference.
-Similarly, "tea bag" and "chain store" seem to indicate anothe pattern within the dataset.
+Similarly, "tea bag" and "chain store" seem to indicate another pattern within the dataset.
 
 MCA 3: Categories associated with tea benefits like "iron absorption," "healthy," "sophisticated," and "diuretic" form a cluster, suggesting they share similar characteristics or appeal to a specific segment of consumers.
 Oppositely, tea without special benefits stands apart, indicating a different category or behavior.

@@ -14,7 +14,7 @@ glimpse(human)
 # Question 2: Exclude unneeded variables: 
 # keep only the columns matching the following variable names:  "Country", "Edu2.FM", "Labo.FM", "Edu.Exp", "Life.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F" (1 point)
 keep <- c("Country", "Edu2.FM", "Labo.FM", "Life.Exp", "Edu.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F")
-human <- dplyr::select(,one_of(keep))
+human <- dplyr::select(human, one_of(keep))
 
 # Question 3: remove Rows with missing values
 complete.cases(human)
@@ -30,8 +30,10 @@ is.na(human_)
 last <- nrow(human_) - 7
 # choose everything until the last 7 observations which has NA in the first column
 human_only_countries <- human[1:last, ]
-nrow(human)
-nrow(human_only_countries)
+
+# check rows for dataset at the beginning and after manipulation
+dim(human) # 195 by 9 variables
+dim(human_only_countries) # 188 by 9 variables
 
 # Question 5: Save the data human in my folder
 write_csv(human_only_countries, "/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human_new.csv")
