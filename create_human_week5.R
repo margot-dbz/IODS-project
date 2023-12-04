@@ -13,7 +13,6 @@ glimpse(human)
 
 # Question 2: Exclude unneeded variables: 
 # keep only the columns matching the following variable names:  "Country", "Edu2.FM", "Labo.FM", "Edu.Exp", "Life.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F" (1 point)
-
 keep <- c("Country", "Edu2.FM", "Labo.FM", "Life.Exp", "Edu.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F")
 human <- dplyr::select(,one_of(keep))
 
@@ -27,14 +26,14 @@ human_ <- filter(human,complete.cases(human))
 is.na(human_)
 
 # Question 4: Remove the observations which relate to regions instead of countries.
-# define the last indice we want to keep
-last <- nrow(human) - 7
+# They are 7 rows that are not country related at the end of the table. Define the last indice we want to keep
+last <- nrow(human_) - 7
 # choose everything until the last 7 observations which has NA in the first column
 human_only_countries <- human[1:last, ]
 nrow(human)
-nrow(human_)
+nrow(human_only_countries)
 
 # Question 5: Save the data human in my folder
-write_csv(human_, "/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human_new.csv")
+write_csv(human_only_countries, "/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human_new.csv")
 
 
