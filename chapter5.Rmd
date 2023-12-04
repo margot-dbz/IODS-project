@@ -27,7 +27,7 @@ library(ggplot2)
 library(tidyr)
 library(GGally)
 
-human_new <- read_csv("/Users/margot/Desktop/Desktop - MacBook Pro de MARGOT/Open data with R 2023/IODS-project/human_new.csv", show_col_types = FALSE)
+human_new <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human2.csv")
 
 # no NA
 any(is.na(human_new))
@@ -111,11 +111,6 @@ pca_human2 <- prcomp(scaled_human)
 biplot(pca_human2, choices = 1:2,
    xlab="PC1 - Country Socio-Economic Development", ylab="PC2 - Female Empowerment and Socio-Economic Development by Women", main = " Principal Component Analysis of Socio-Economic Indicators: Mapping Country Development Factors and Female Empowerment")
 
-# Check for missing values
-any(is.na(scaled_human))
-
-# Check for infinite values
-any(is.infinite(scaled_human))
 ```
 
 ### Include captions and descriptions on PCA:
