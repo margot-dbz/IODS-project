@@ -12,8 +12,6 @@ output:
     number_section: false
 ---
 
-[My git repository](https://github.com/margot-dbz/IODS-project)
-
 This R Markdown sheet includes a quite large set of R code chunks taken from the RHDS book **R for Health Data Science** by Ewen Harrison and Riinu Pius (CRC Press, 2021), available online at <https://argoshare.is.ed.ac.uk/healthyr_book/>. The structure follows the structure of the book (chapters 2, 3, 4, 5, 6, and 8 and their sections and subsections).
 
 The goal is to get familiar with R and R Markdown (in a quite quick pace) using typical R functions for data wrangling, visualization, and analysis. You do not need to do very much (yet), mostly just read or browse the book while following and exploring the work flow in RStudio, activating the R functions and studying the output (results, statistics, graphics etc.) that will be created (including some tiny errors that are included on purpose). There are also some small exercises, where you are encouraged to write a bit of R code yourself (based on the hints given in the book). You may well skip those exercises.
@@ -340,7 +338,7 @@ mydata_year2000 # This prints the object that has been populated by the data fil
 
 ```{r}
 new_data_selection <- gbd_short %>% 
-  filter((year == 1990 | year == 2013) & cause == "Communicable diseases")
+  filter((year == 1990 | year == 2011) & cause == "Communicable diseases")
 
 new_data_selection
 ```
@@ -399,10 +397,13 @@ mydata %>%
   filter(!is.na(var2))
 
 mydata %>% 
-  filter(var2 != 5)
+  filter(! var2 == 5)
 
 mydata %>% 
-  filter(var2 != 5 | is.na(var2))
+  filter( var2 != 5)
+
+mydata %>% 
+  filter(var2 != 5 | is.na(var2)) # It will add NA rows + all rows different than 5 in var2
 ```
 
 2.7 continued...
@@ -425,6 +426,8 @@ nrow(subset1) + nrow(subset2) == nrow(mydata)
 subset3 <- mydata %>% 
   filter(is.na(var2))
 
+nrow(subset3)
+
 nrow(subset1) + nrow(subset2) + nrow(subset3) == nrow(mydata)
 ```
 
@@ -440,8 +443,12 @@ typesdata$measurement/2
 typesdata %>% 
   mutate(measurement/2)
 
+typesdata$"measurement/2" # It is impossible to print the data from this column as it doesnt have a name.
+
 typesdata %>% 
   mutate(measurement_half = measurement/2)
+
+
 ```
 
 2.8 continued...
@@ -468,10 +475,12 @@ typesdata_modified
 
 ```{r}
 library(lubridate)
-typesdata %>% 
+typesdata_dates <- typesdata %>% 
   mutate(reference_date   = ymd_hm("2020-01-01 12:00"),
          dates_difference = reference_date - date) %>% 
   select(date, reference_date, dates_difference)
+
+typesdata_dates
 
 typesdata %>% 
   mutate(mean_measurement = mean(measurement))
@@ -486,11 +495,22 @@ typesdata %>%
 ### 2.8.1 Worked example/exercise
 
 ```{r}
+
+typesdata %>% 
+  mutate(reference_date   = ymd_hm("2020-01-01 12:00"),
+         dates_difference = reference_date - date) %>% 
+  select(matches("date"))
+
 typesdata %>% 
   mutate(reference_date   = ymd_hm("2020-01-01 12:00"),
          dates_difference = reference_date - date) %>% 
   mutate(dates_difference = round(dates_difference)) %>% 
   select(matches("date"))
+
+
+typesdata %>% 
+  mutate(dates_difference = round(ymd_hm("2020-01-01 12:00") - date)) 
+# This is not as easy to read the codes, it is preferable to break the codes in different lines.
 ```
 
 ## 2.9 Conditional calculations - if_else()
@@ -500,6 +520,8 @@ typesdata %>%
   mutate(above_threshold = if_else(measurement > 3,
                                    "Above three",
                                    "Below three"))
+
+
 ```
 
 ## 2.10 Create labels - paste()
@@ -509,25 +531,28 @@ typesdata %>%
   mutate(plot_label = paste(id,
                             "was last measured at", date,
                             ", and the value was",    measurement)) %>% 
-  select(plot_label)
+  select(plot_label) # here the pipe after the paste() is necessary as we want r to read all the line of codes at once.
 
 pastedata <- tibble(year  = c(2007, 2008, 2009),
                    month = c("Jan", "Feb", "March"),
                    day   = c(1, 2, 3))
 pastedata
+
+pastedata %>% 
+  mutate(date = paste(day, month, year, sep = "-"))
 ```
 
 2.10 continued...
 
 ```{r}
 pastedata %>% 
-  mutate(date = paste(day, month, year, sep = "-"))
+  mutate(date = paste(day, month, year, sep = "---"))
 
 library(lubridate)
 
 pastedata %>% 
-  mutate(date = paste(day, month, year, sep = "-")) %>% 
-  mutate(date = dmy(date))
+  mutate(date = paste(day, month, year, sep = "---")) %>% 
+  mutate(date = dmy(date)) #It will take the data between the separators, first item is day, second item is month and third item is year.
 ```
 
 ## 2.11 Joining multiple datasets
@@ -561,7 +586,10 @@ labsdata_updated <- labsdata %>%
   add_row(id = 5, measurement = 2.49)
 labsdata_updated
 
-left_join(patientdata, labsdata_updated)
+patientdata
+labsdata_updated
+left_join(patientdata, labsdata_updated) #This one only adds data based on the IDs of the patientdata, so from ID 1 to 6. Because we add the second table, it will add one more row for 5 as there are 2 measurements. 
+right_join(patientdata, labsdata_updated) #This one only adds data based on the IDs of the labsdata_updated so from ID 5 to 8 with 2 times the 5
 ```
 
 Well done! That was active reading of Chapter 2.
@@ -623,17 +651,21 @@ gbd2017 %>%
 
 gbd2017 %>% 
   group_by(cause, sex) %>% 
-  summarise(sum(deaths_millions))
+  summarise(sum(deaths_millions)) %>% 
+  arrange((sex))
 ```
 
 ## 3.4 Add new columns: mutate()
 
 ```{r}
+install.packages("scales")
+library(scales)
 gbd2017 %>% 
   group_by(cause, sex) %>% 
   summarise(deaths_per_group = sum(deaths_millions)) %>% 
-  ungroup() %>% 
-  mutate(deaths_total = sum(deaths_per_group))
+  ungroup() %>%  # Need to ungroup for the next calculations which is the total death all categories. 
+  mutate(deaths_total = sum(deaths_per_group)) %>% 
+  mutate(pourcentage= percent(deaths_per_group/deaths_total))
 ```
 
 ### 3.4.1 Percentages formatting: percent()
@@ -650,7 +682,7 @@ gbd2017_summarised <- gbd2017 %>%
 gbd2017_summarised
 
 # using values from the first row as an example:
-round(100*4.91/55.74, 1) %>% paste0("%")
+round(100*4.91/55.74, 1) %>% paste0("%") # paste0 do not add any space between the in t and string
 
 gbd2017_summarised %>% 
   mutate(deaths_relative = deaths_per_group/deaths_total)
@@ -676,33 +708,39 @@ gbd_summarised_sex
 3.5 continued...
 
 ```{r}
-full_join(gbd_summarised, gbd_summarised_sex)
+grouped_table <- full_join(gbd_summarised, gbd_summarised_sex)
+grouped_table
 
+grouped_table %>% 
+  mutate(pourcentage_cause_sex = deaths_per_group/deaths_per_sex)
+
+# or we can use mutate instead of combining the two tables.
 gbd_summarised %>% 
   group_by(sex) %>% 
   mutate(deaths_per_sex = sum(deaths_per_group))
 
 gbd2017 %>% 
   group_by(cause, sex) %>% 
-  summarise(deaths_per_group = sum(deaths_millions)) %>% 
-  group_by(sex) %>% 
-  mutate(deaths_per_sex  = sum(deaths_per_group),
-         sex_cause_perc = percent(deaths_per_group/deaths_per_sex)) %>% 
-  arrange(sex, deaths_per_group)
+  summarise(deaths_per_group = sum(deaths_millions)) %>% #keep the table we need with cause and sex and we add the total deaths for each subgroup
+  group_by(sex) %>% # Then we group per sex
+  mutate(deaths_per_sex  = sum(deaths_per_group), #add the total death per sex to compare with the total of death per subgroup (cause, sex)
+         sex_cause_perc = percent(deaths_per_group/deaths_per_sex)) %>% #W calculate the ratio and use the percent to show the %. we cannot use this data to calulate anymore. It is a string
+  arrange(sex, deaths_per_group) # we order per cause, then sex
 ```
 
 ## 3.6 Common arithmetic functions - sum(), mean(), median(), etc.
 
 ```{r}
 mynumbers <- c(1, 2, NA)
-sum(mynumbers)
+sum(mynumbers) #cannot calculate due to the NA value
 
-sum(mynumbers, na.rm = TRUE)
+sum(mynumbers, na.rm = TRUE) # we remove the NA and it calculates.
 ```
 
 ## 3.7 select() columns
 
 ```{r}
+library(tidyverse)
 gbd_2rows <- gbd_full %>% 
   slice(1:2)
 
@@ -755,7 +793,7 @@ gbd_long %>%
 
 ```{r}
 gbd_wide %>% 
-  pivot_longer(matches("Female|Male"), 
+  pivot_longer(matches("Female|Male"), # here the | means OR
                names_to = "sex_year", 
                values_to = "deaths_millions") %>% 
   slice(1:6)
@@ -788,7 +826,8 @@ gbd_long %>%
   slice(1:3)
 
 gbd_long %>% 
-  arrange(desc(sex)) %>% 
+  arrange(desc(sex)) 
+  
   # printing rows 1, 2, 11, and 12
   slice(1,2, 11, 12)
 ```
@@ -799,13 +838,15 @@ gbd_long %>%
 gbd_factored <- gbd_long %>% 
   mutate(cause = factor(cause))
 
-gbd_factored$cause %>% levels()
+gbd_factored$cause %>% levels() # This means that factors will be sorted based on the order in which their levels are encountered in the original data, not necessarily alphabetically.
 
 gbd_factored <- gbd_factored %>% 
   mutate(cause = cause %>% 
-           fct_relevel("Injuries"))
+           fct_relevel("Injuries")) #This will order the injuries first.
 
+gbd_factored
 gbd_factored$cause %>% levels()
+
 ```
 
 ### 3.10.1 Exercise - pivot_wider()
@@ -816,6 +857,10 @@ Look at Table 3.4 on page <https://argoshare.is.ed.ac.uk/healthyr_book/exercises
 gbd_long <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/RHDS/master/data/global_burden_disease_cause-year-sex.csv")
 
 # Solution:
+gdb_wide <- gbd_long %>% 
+  pivot_wider(names_from = cause, values_from = deaths_millions)
+
+gdb_wide
 
 gbd_long %>% 
   pivot_wider(names_from = cause, values_from = deaths_millions)
@@ -826,7 +871,9 @@ gbd_long %>%
 ```{r}
 gbd_full <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/RHDS/master/data/global_burden_disease_cause-year-sex-income.csv")
 
-glimpse(gbd_full)
+dim(gbd_full) # 168 entries
+
+glimpse(gbd_full) # to inspect the structure of a dataset
 
 summary_data1 <- 
   gbd_full %>% 
@@ -834,6 +881,11 @@ summary_data1 <-
   summarise(total_per_year = sum(deaths_millions))
 
 summary_data1
+
+year_count <- gbd_full %>% 
+  count(year)
+
+year_count # 24 entries per year and there are 7 years = 168 as the number of entries in the dataset.
 
 summary_data2 <- 
   gbd_full %>% 
@@ -846,8 +898,17 @@ summary_data2
 ### 3.10.3 Exercise - full_join(), percent()
 
 ```{r}
-# Solution:
+# My Solution:
 
+library(scales)
+summary_data1_data2 <- full_join(summary_data1, summary_data2) %>% 
+  mutate(distribution_cause_deaths_per_year = total_per_cause / total_per_year) %>% 
+  mutate(percent(distribution_cause_deaths_per_year))
+
+summary_data1_data2
+
+
+# Book Solution
 library(scales)
 full_join(summary_data1, summary_data2) %>% 
   mutate(percentage = percent(total_per_cause/total_per_year)) 
@@ -857,6 +918,18 @@ full_join(summary_data1, summary_data2) %>%
 
 ```{r}
 # Solution:
+exercise4 <- gbd_full %>% 
+  group_by(year, cause) %>% 
+  summarise(total_per_cause= sum(deaths_millions)) %>% 
+  group_by(year) %>% 
+  mutate(total_per_year =sum(total_per_cause)) %>% 
+  mutate(percentage = percent(total_per_cause/total_per_year)) %>% 
+  select(year,cause,percentage) %>% 
+  pivot_wider(names_from = cause, values_from = percentage)
+  
+
+exercise4
+
 
 gbd_full %>% 
   # aggregate to deaths per cause per year using summarise()
@@ -876,6 +949,14 @@ gbd_full %>%
 
 ```{r}
 # Solution:
+gbd_full
+
+gbd_full %>% 
+  filter(year ==1990) %>% 
+  group_by(sex,income) %>% 
+  summarize(deaths_per_sex_income = sum(deaths_millions)) %>% 
+  pivot_wider(names_from = sex, values_from = deaths_per_sex_income) %>% 
+  mutate(diff_M_F = Male/Female)
 
 gbd_full %>% 
   filter(year == 1990) %>% 
@@ -956,6 +1037,10 @@ gapdata2007 %>%
   ggplot(aes(x = gdpPercap, y = lifeExp, colour = continent)) +
   geom_point(shape = 1)
 
+gapdata %>% 
+  ggplot(aes(x = year, y = lifeExp, group = country)) +
+  geom_line()
+
 ```
 
 4.2 continued...
@@ -976,6 +1061,10 @@ gapdata2007 %>%
   geom_point(shape = 1) +
   facet_wrap(~continent) +
   theme_bw()
+
+gapdata2007 %>% 
+  ggplot(aes(x = gdpPercap/1000, y = lifeExp, size = pop)) +
+  geom_point(shape = 1, alpha = 0.5)
 ```
 
 ## 4.3 Set your theme - grey vs white
@@ -1025,6 +1114,14 @@ Look at Figure 4.9 on page <https://argoshare.is.ed.ac.uk/healthyr_book/line-plo
 gapdata %>% 
   ggplot(aes(x = year, y = lifeExp, group = country)) +
   geom_line()
+
+# My result:
+gapdata %>% 
+  ggplot(aes(x = year, y = lifeExp, group = country, color = continent)) +
+  geom_line() +
+  facet_wrap(~continent) + 
+  theme_bw()
+
 ```
 
 Try to transform the above graph following these instructions:
@@ -1075,7 +1172,23 @@ gapdata2007 %>%
 Look at Figure 4.13 on the page <https://argoshare.is.ed.ac.uk/healthyr_book/bar-plots.html> and try to recreate it!
 
 ```{r}
+gapdata %>% 
+  filter(continent == "Europe", year == 2007) %>% 
+  mutate(country = fct_reorder(country,lifeExp)) %>% 
+  ggplot(aes(x = lifeExp, y = country)) + 
+  geom_col(fill = NA, color = "deepskyblue") 
 
+
+library(tidyverse)
+library(gapminder)
+
+gapminder %>% 
+  filter(year == 2007) %>%
+  filter(continent == "Europe") %>% 
+  ggplot(aes(x = fct_reorder(country, lifeExp), y = lifeExp)) +
+  geom_col(colour = "deepskyblue", fill = NA) +
+  coord_flip() +
+  theme_classic()
 ```
 
 ## 4.7 Histograms
@@ -1145,8 +1258,36 @@ gapdata2007 %>%
   # Second geom - jitter with its own aes(colour = )
   geom_jitter(aes(colour = continent)) +
   # Third geom - label, with its own dataset (label_data) and aes(label = )
-  geom_label(data = label_data, aes(label = country))
+  geom_text(data = label_data, aes(label = country))
+
+gapdata2007 %>% 
+  ggplot(aes(x = continent, y = lifeExp)) +
+  # First geom - boxplot
+  geom_boxplot() +
+  # Second geom - jitter with its own aes(colour = )
+  geom_jitter(aes(colour = continent)) +
+  # Third geom - label, with its own dataset (label_data) and aes(label = )
+  geom_text(data = label_data, aes(label = lifeExp))
+
+label_data2 <- gapdata2007 %>% 
+  group_by(continent) %>%
+  summarize(lifeExp = mean(lifeExp)) %>%
+  mutate(lifeExp = round(lifeExp, 2)) %>%
+  select(continent, lifeExp)
+
+label_data2
+
+gapdata2007 %>% 
+  ggplot(aes(x = continent, y = lifeExp)) +
+  # First geom - boxplot
+  geom_boxplot() +
+  # Second geom - jitter with its own aes(colour = )
+  geom_jitter(aes(colour = continent)) +
+  # Third geom - label, with its own dataset (label_data) and aes(label = )
+  geom_text(data = label_data2, aes(label = lifeExp))
+
 ```
+
 
 Try the suggested experiments given on page <https://argoshare.is.ed.ac.uk/healthyr_book/multiple-geoms-multiple-aes.html> with the R code above. (Copy-paste the above code chunk below to experiment with it!)
 
