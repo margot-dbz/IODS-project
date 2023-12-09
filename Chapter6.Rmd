@@ -1,0 +1,293 @@
+---
+title: "Chapter6"
+output: html_document
+date: "2023-12-09"
+---
+
+```{r)
+```
+
+# Chapter 5
+
+## DATA WRANGLING
+### 1. Load the data sets (BPRS and RATS) 
+
+```{r}
+library(tidyverse)
+# Save the url in a object
+
+url_data1 <- "https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt"
+
+url_data2 <- "https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt"
+
+# read the data and save it i a object
+BPRS <- read.table(url_data1, header = TRUE, sep = ' ')
+RATS <- read.table(url_data2, sep ='\t', header = T)
+```
+
+
+### check the dataset
+check the variable names, view the data contents and structures, and create some brief summaries of the variables , so that you understand the point of the wide form data. (1 point)
+
+```{r}
+#BPRS
+str(BPRS)
+glimpse(BPRS)
+dim(BPRS)
+summary(BPRS)
+
+```
+
+The data shows analyze of BPRS for different participants (20). 
+There are no groups for participants, but some of them got the studied treatment, some won't
+The max BPRS over the weeks is 95 and the min weight is 18.
+The PBRS changes every day in term of min, max, median and mean.
+Variable Treatment and subject are int -> need to be changed to factor for further analyzes. 
+Rows 40 and columns 11 -> format is wide -> needs to be changed to long.
+
+```{r}
+#RATS
+str(RATS)
+glimpse(RATS)
+dim(RATS)
+summary(RATS)
+```
+
+The data shows weight for different rats (16) at different time from 1 to 64. 
+Each rat belongs to a group. There are 3 groups. 
+The max weight over the weeks is 628 and the min weight is 225.
+The mean changes every day in term of min, max, median and mean.
+Variable ID and group are int -> need to be changed to factor for further analyzes. 
+Rows 16 and columns 13 -> format is wide -> needs to be changed to long.
+
+
+### 2. Convert the categorical variables to factors
+
+```{r}
+#BPRS
+BPRS$treatment <- factor(BPRS$treatment)
+BPRS$subject <- factor(BPRS$subject)
+
+# RATS
+RATS$ID <- factor(RATS$ID )
+RATS$Group <- factor(RATS$Group)
+```
+
+### 3. Convert the data sets to long form. 
+
+Add a week variable to BPRS and a Time variable to RATS. (1 point) > reorder by period of time (week or WD) > add one column where the week or WD is just a number without string. 
+
+BPRS
+```{r}
+BPRS_long <- pivot_longer(BPRS, cols = -c(treatment, subject), # do not pivot, return as they are
+                       names_to = "weeks", values_to = "bprs") %>% # names_to is the new column created for the former column titles, the values_to is the new column created for the values
+          arrange(weeks) %>% # order by weeks variable  
+            mutate(week = as.integer(substr(weeks,5,5)))
+```
+
+Rats
+```{r}
+RATS_long <- pivot_longer(RATS, cols = -c(ID, Group), 
+                       names_to = "WD", values_to = "weight") %>% 
+  arrange(WD) %>% 
+  mutate(Time = as.integer(substr(WD,3,4)))
+          
+```
+
+
+### 4. Compare wide vs long format: 
+Now, take a serious look at the new data sets and compare them with their wide form versions: Check the variable names, view the data contents and structures, and create some brief summaries of the variables. Make sure that you understand the point of the long form data and the crucial difference between the wide and the long forms before proceeding the to Analysis exercise. (2 points)
+
+Long format data allow for a more detailed examination of individual measurements, making it easier to assess the impact of various factors on the outcome. This format also facilitates the application of statistical methods designed for longitudinal or repeated measures analysis.
+
+BPRS
+```{r}
+str(BPRS_long)
+glimpse(BPRS_long)
+dim(BPRS_long)
+summary(BPRS_long)
+```
+
+The main difference with the long table is that we now have one entry for each measure for a week, subject, treatment type like if each entry would be an independent one. We can now consider the impact of variables like treatment type, weeks, subjects themselves on their BPRS.
+We now have one mean, and one median for the total of the study: 35 mean, 35 median, min and max stays of course the same.
+Treatment and subject are now factor variable (dummy variable). This transformation helps represent categorical information in a format that can be used effectively in statistical analyses.
+Week is now an integer. This allows for mathematical operations and analysis involving these variables.
+
+RATS
+```{r}
+str(RATS_long)
+glimpse(RATS_long)
+dim(RATS_long)
+summary(RATS_long)
+```
+The main difference with the long table is that we now have one entry for each measure for a time, rat, group like if each entry would be an independent one. We can now consider we have only one rat and check the impact of variables like group, time on the weight. 
+We now have one mean, and one median for the total of the study: 384.5 mean, 344.5 median, min and max stays of course the same. 
+ID and Group are now factor variable (dummy variable). This transformation helps represent categorical information in a format that can be used effectively in statistical analyses.
+Time is now an integer. This allows for mathematical operations and analysis involving these variables.
+
+
+
+## Analysis
+
+### Baseline as a Covariate model:
+
+Implement the analyses of Chapter 8 of MABS, using the R codes of Exercise Set 6: Meet and Repeat: PART I but using the RATS data (from Chapter 9 and Meet and Repeat: PART II).
+(0-7 points: 0-4 points for graphs or analysis results + 0-3 points for their interpretations)
+
+```{r}
+
+#Access the packages
+library(ggplot2)
+library(tidyr)
+
+# Draw the plot
+ggplot(RATS_long, aes(x = Time, y = weight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") 
+
+```
+
+ We can see a huge difference between each group in term of weight from the beginning and this different stays time after time so eachc data point might be dependent to each other.
+ The group 2 also seems to have one rat very different than the others. 
+ Because of the massive difference let's standardize the data so that the starting point does not influence the results and compare groups with standardized data.
+ 
+ Analyze of standardized means of each rat's weights per group and per Time.
+ 
+```{r}
+# Standardise the variable bprs
+RATS2 <- RATS_long %>%
+  group_by(Time) %>% # perform the next steps per week. 
+  mutate(stdweight = (weight - mean(weight)) / sd(weight)) %>% # add up the bprs result per week
+  ungroup() # ungroup for the next use of this object.
+
+# Glimpse the data
+glimpse(RATS2)
+
+# Draw the plot
+ggplot(RATS2, aes(x = Time, y = stdweight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") 
+```
+
+Analyze of mean and standard deviation of the rats weights per group and per Time.
+
+```{r}
+
+# Summary data with mean and standard error of bprs by treatment and week 
+RATS3 <- RATS_long %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(weight), se =sd(weight)) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(RATS3)
+
+# Plot the mean per group of rats
+ggplot(RATS3, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) + # set the 3 different lines for the 3 groups
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,3)) + # set the 3 different point shapes for the 3 groups
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.8,0.8)) +
+  scale_y_continuous(name = "mean(bprs) +/- se(bprs)")
+
+```
+
+Analyze of weighsts mean and standar deviation per group
+```{r}
+
+# Create a summary data by treatment and subject with mean as the summary variable (ignoring baseline week 0)
+RATS4 <- RATS_long %>%
+  filter(Time > 1) %>% # post first day. 
+  group_by(Group, ID) %>%
+  summarise( mean=mean(weight) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(RATS4)
+
+# Draw a boxplot of the mean weight vs group
+ggplot(RATS4, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(bprs) for the studied Time period")
+
+```
+
+ We can see an outliers in group 1 - a very small rat
+ We can see an outlier in group 2 - a very big rat
+ We can see an outlier in group 3 - a smaller rat than the rest
+ No matter what we can just notiy the big differences between groups and between rats. 
+ 
+```{r}
+# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+RATS4_2 <- RATS4 %>% 
+  filter(mean > 240) %>% 
+  filter(mean < 540)
+
+ggplot(RATS4_2, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "for the studied Time period")
+
+```
+
+```{r}
+RATS4_3 <- RATS4 %>%
+  mutate(baseline = RATS$WD1)
+
+# Fit the linear model with the mean as the response (variables to influence weight are the baseline: situation in WD1 and the Group)
+# We don't consider the rats individuality but more the group differences that impact the results but also their weight at the beginning of the study
+fit_RATS <- lm(mean ~ baseline + Group, data = RATS4_3)
+
+summary(fit_RATS)
+anova(fit_RATS)
+AIC(fit_RATS) # 129
+BIC(fit_RATS) # 133
+plot(fit_RATS)
+
+# just for the try, let's remove baseline and see what is happening
+# this model explain 92% but it is because there is a strong dependence between the data from one group and from each rat. Therefore there is a correlation that is not justified. This correlation might indicate interdependencies that are not justified or are not captured fully by the current model.
+fit_RATS2 <- lm(mean ~ Group, data = RATS4_3)
+summary(fit_RATS2)
+anova(fit_RATS2)
+AIC(fit_RATS2) # 165
+BIC(fit_RATS2) # 168
+```
+
+FIRST MODEL WITH BASELINE _ CONCLUSION: 
+The T value of the baseline is 10.8, it is very high so it means this baseline impacts the studies weight (p is very small so it is significant). The estimate for the baseline variable remains significantly different from zero even when considering its standard error, reinforcing its importance in explaining weight changes.
+Group Impact: Group 1 serves as reference. The coefficients for Group2 and Group3 which represent the differences between those groups and the baseline, aren't as substantial, and their impact on weight might not be statistically significant based on the p-values. 
+The spread of residuals looks decent, with the majority being relatively close to zero 
+However, there are a few larger residuals (especially the maximum value - the median is 2.19, and the values between the first quartile (1Q) and the third quartile (3Q) range from -4.194 to 7.577.), indicating potential outliers or areas where the model might not fit perfectly.
+The anova results suggests that while baseline has a strong effect on the mean, Group might have some influence. Baseline has a highly significant effect on the mean, given its extremely low p-value (p < 0.001). However, Group shows a p-value of 0.076, indicating a relatively higher significance threshold (not less than 0.05).
+
+
+### Random Effects in Longitudinal Analysis:
+
+Implement the analyses of Chapter 9 of MABS, using the R codes of Exercise Set 6: Meet and Repeat: PART II, but using the BPRS data (from Chapter 8 and Meet and Repeat: PART I).
+(0-8 points: 0-4 points for graphs or analysis results + 0-4 points for their interpretations)
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
