@@ -2,35 +2,40 @@
 title: "Chapter6"
 output: html_document
 date: "2023-12-09"
+owner: "Margot de Bazillac"
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
-```{r)
-```
+`{r)`
 
 # Chapter 5
 
-## DATA WRANGLING
-### 1. Load the data sets (BPRS and RATS) 
+## Data wrangling
+
+**Load the data sets (BPRS and RATS) and analyze the dataset**
 
 ```{r}
 library(tidyverse)
+library(tidyr)
+library(ggplot2)
 # Save the url in a object
 
 url_data1 <- "https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt"
 
 url_data2 <- "https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt"
 
-# read the data and save it i a object
+# read the data and save it as an object
 BPRS <- read.table(url_data1, header = TRUE, sep = ' ')
 RATS <- read.table(url_data2, sep ='\t', header = T)
 ```
 
-
-### check the dataset
-check the variable names, view the data contents and structures, and create some brief summaries of the variables , so that you understand the point of the wide form data. (1 point)
+Check the variable names, view the data contents and structures, and create some brief summaries of the variables , so that you understand the point of the wide form data.
+(1 point)
 
 ```{r}
-#BPRS
+#BPRS dataset
 str(BPRS)
 glimpse(BPRS)
 dim(BPRS)
@@ -38,12 +43,12 @@ summary(BPRS)
 
 ```
 
-The data shows analyze of BPRS for different participants (20). 
-There are no groups for participants, but some of them got the studied treatment, some won't
-The max BPRS over the weeks is 95 and the min weight is 18.
+The data shows analyze of BPRS for different participants (20).
+There are no groups for participants, but we have 2 types of treatment which we can consider as 2 groups.
+The max BPRS over the weeks is 95 and the min is 18.
 The PBRS changes every day in term of min, max, median and mean.
-Variable Treatment and subject are int -> need to be changed to factor for further analyzes. 
-Rows 40 and columns 11 -> format is wide -> needs to be changed to long.
+The variables treatment and subject are integer -\> need to be changed to factor for further analyzes.
+We have 40 rows 40 and 11 columns -\> format is wide -\> needs to be changed to long format.
 
 ```{r}
 #RATS
@@ -53,15 +58,16 @@ dim(RATS)
 summary(RATS)
 ```
 
-The data shows weight for different rats (16) at different time from 1 to 64. 
-Each rat belongs to a group. There are 3 groups. 
+The data shows weight for different rats (16) at different time from 1 to 64.
+Each rat belongs to a different group.
+There are 3 groups.
 The max weight over the weeks is 628 and the min weight is 225.
 The mean changes every day in term of min, max, median and mean.
-Variable ID and group are int -> need to be changed to factor for further analyzes. 
-Rows 16 and columns 13 -> format is wide -> needs to be changed to long.
+The variables ID and group are integer -\> need to be changed to factor for further analyzes.
+There are 16 rows and 13 columns -\> format is wide and needs to be changed to long format.
 
 
-### 2. Convert the categorical variables to factors
+**2. Convert the categorical variables to factors**
 
 ```{r}
 #BPRS
@@ -73,19 +79,22 @@ RATS$ID <- factor(RATS$ID )
 RATS$Group <- factor(RATS$Group)
 ```
 
-### 3. Convert the data sets to long form. 
 
-Add a week variable to BPRS and a Time variable to RATS. (1 point) > reorder by period of time (week or WD) > add one column where the week or WD is just a number without string. 
+**3. Convert the table to long form**
+
+Add a week variable to BPRS and a Time variable to RATS \> reorder by period of time (week or WD) \> add one column where the week or WD is an integer.
 
 BPRS
+
 ```{r}
-BPRS_long <- pivot_longer(BPRS, cols = -c(treatment, subject), # do not pivot, return as they are
+BPRS_long <- pivot_longer(BPRS, cols = -c(treatment, subject), # columns are not pivoted, they are returned as they are
                        names_to = "weeks", values_to = "bprs") %>% # names_to is the new column created for the former column titles, the values_to is the new column created for the values
           arrange(weeks) %>% # order by weeks variable  
             mutate(week = as.integer(substr(weeks,5,5)))
 ```
 
-Rats
+RATS
+
 ```{r}
 RATS_long <- pivot_longer(RATS, cols = -c(ID, Group), 
                        names_to = "WD", values_to = "weight") %>% 
@@ -95,12 +104,17 @@ RATS_long <- pivot_longer(RATS, cols = -c(ID, Group),
 ```
 
 
-### 4. Compare wide vs long format: 
-Now, take a serious look at the new data sets and compare them with their wide form versions: Check the variable names, view the data contents and structures, and create some brief summaries of the variables. Make sure that you understand the point of the long form data and the crucial difference between the wide and the long forms before proceeding the to Analysis exercise. (2 points)
+**Compare wide vs long format**
 
-Long format data allow for a more detailed examination of individual measurements, making it easier to assess the impact of various factors on the outcome. This format also facilitates the application of statistical methods designed for longitudinal or repeated measures analysis.
+Now, take a serious look at the new data sets and compare them with their wide form versions: Check the variable names, view the data contents and structures, and create some brief summaries of the variables.
+Make sure that you understand the point of the long form data and the crucial difference between the wide and the long forms before proceeding the to Analysis exercise.
+(2 points)
+
+> Long format data allow for a more detailed examination of individual measurements, making it easier to assess the impact of various factors on the outcome.
+> This format also facilitates the application of statistical methods designed for longitudinal or repeated measures analysis.
 
 BPRS
+
 ```{r}
 str(BPRS_long)
 glimpse(BPRS_long)
@@ -108,32 +122,37 @@ dim(BPRS_long)
 summary(BPRS_long)
 ```
 
-The main difference with the long table is that we now have one entry for each measure for a week, subject, treatment type like if each entry would be an independent one. We can now consider the impact of variables like treatment type, weeks, subjects themselves on their BPRS.
-We now have one mean, and one median for the total of the study: 35 mean, 35 median, min and max stays of course the same.
-Treatment and subject are now factor variable (dummy variable). This transformation helps represent categorical information in a format that can be used effectively in statistical analyses.
-Week is now an integer. This allows for mathematical operations and analysis involving these variables.
+The main difference with the long table is that we now have one entry for each measure for a week, subject, treatment type like if each entry would be an independent one.
+We can now consider the impact of variables like treatment types, weeks, subjects and their BPRS score.
+We now have one mean, and one median for the total of the study.
+Treatment and subject are now factor variables (dummy variables).
+This transformation helps represent categorical information in a format that can be used effectively in statistical analyses.
+Week is now an integer.
+This allows for mathematical operations and analysis involving these variables.
 
 RATS
+
 ```{r}
 str(RATS_long)
 glimpse(RATS_long)
 dim(RATS_long)
 summary(RATS_long)
 ```
-The main difference with the long table is that we now have one entry for each measure for a time, rat, group like if each entry would be an independent one. We can now consider we have only one rat and check the impact of variables like group, time on the weight. 
-We now have one mean, and one median for the total of the study: 384.5 mean, 344.5 median, min and max stays of course the same. 
-ID and Group are now factor variable (dummy variable). This transformation helps represent categorical information in a format that can be used effectively in statistical analyses.
-Time is now an integer. This allows for mathematical operations and analysis involving these variables.
 
+The main difference with the long table is that we now have one entry for each measure for a time, rat, group like if each entry would be an independent one.
+We can now do analyzes like if we would have only one rat and different situations based on variables like group, time which impact the rat's weight.
+We now have one mean, and one median for the total of the study: 384.5 mean, 344.5 median.
+ID and Group are now factor variables (dummy variables).
+This transformation helps represent categorical information in a format that can be used effectively in statistical analyses.
+Time is now an integer.
+This allows for mathematical operations and analysis involving these variables.
 
-
-## Analysis
-
-### Baseline as a Covariate model:
+## Model with a baseline as a covariate - dataset RATS
 
 Implement the analyses of Chapter 8 of MABS, using the R codes of Exercise Set 6: Meet and Repeat: PART I but using the RATS data (from Chapter 9 and Meet and Repeat: PART II).
 (0-7 points: 0-4 points for graphs or analysis results + 0-3 points for their interpretations)
 
+**Plot the data**
 ```{r}
 
 #Access the packages
@@ -149,16 +168,16 @@ ggplot(RATS_long, aes(x = Time, y = weight, linetype = ID)) +
 
 ```
 
- We can see a huge difference between each group in term of weight from the beginning and this different stays time after time so eachc data point might be dependent to each other.
- The group 2 also seems to have one rat very different than the others. 
- Because of the massive difference let's standardize the data so that the starting point does not influence the results and compare groups with standardized data.
- 
- Analyze of standardized means of each rat's weights per group and per Time.
- 
+We can see a huge difference between each group in term of weight from the beginning and this difference seems to stay over time so data points might be dependent to each other.
+The group 2 seems to have one rat's weight very different than the others.
+Because of the massive difference let's standardize the data so that the starting point does not influence the results and compare groups with standardized data.
+
+**Analyze of standardized means of rat's weight per group and per Time**
+
 ```{r}
-# Standardise the variable bprs
+# Standardise the variable weight
 RATS2 <- RATS_long %>%
-  group_by(Time) %>% # perform the next steps per week. 
+  group_by(Time) %>% # perform the next code lines per week
   mutate(stdweight = (weight - mean(weight)) / sd(weight)) %>% # add up the bprs result per week
   ungroup() # ungroup for the next use of this object.
 
@@ -173,21 +192,24 @@ ggplot(RATS2, aes(x = Time, y = stdweight, linetype = ID)) +
   theme(legend.position = "none") 
 ```
 
-Analyze of mean and standard deviation of the rats weights per group and per Time.
+**Analyze of mean and standard deviation of the rats weights per group and per Time.**
 
 ```{r}
 
-# Summary data with mean and standard error of bprs by treatment and week 
+# Summary data with mean and standard error of weight 
 RATS3 <- RATS_long %>%
   group_by(Group, Time) %>%
-  summarise( mean = mean(weight), se =sd(weight)) %>%
+  summarise(mean = mean(weight),
+            sd = sd(weight),
+            n = n()) %>%
+  mutate(se = sd / sqrt(n)) %>%
   ungroup()
 
 # Glimpse the data
 glimpse(RATS3)
 
 # Plot the mean per group of rats
-ggplot(RATS3, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+ggplot(RATS3, aes(x = Time, y = mean, linetype = Group, shape = Group, color = Group)) +
   geom_line() +
   scale_linetype_manual(values = c(1,2,3)) + # set the 3 different lines for the 3 groups
   geom_point(size=3) +
@@ -198,10 +220,14 @@ ggplot(RATS3, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
 
 ```
 
-Analyze of weighsts mean and standar deviation per group
+This plot shos well the difference of weight per group but also withing group.
+It also shows well that the evolution over time depends on the starting point weight of a rat.
+
+**Analyze of weights mean and standard deviation per group**
+
 ```{r}
 
-# Create a summary data by treatment and subject with mean as the summary variable (ignoring baseline week 0)
+# Create a summary data by group and ID with mean as the summary variable (ignoring baseline Time 0)
 RATS4 <- RATS_long %>%
   filter(Time > 1) %>% # post first day. 
   group_by(Group, ID) %>%
@@ -219,13 +245,17 @@ ggplot(RATS4, aes(x = Group, y = mean)) +
 
 ```
 
- We can see an outliers in group 1 - a very small rat
- We can see an outlier in group 2 - a very big rat
- We can see an outlier in group 3 - a smaller rat than the rest
- No matter what we can just notiy the big differences between groups and between rats. 
- 
+We can see outliers in group 1 - a very small rat We can see an outlier in group 2 - a very big rat.
+We can see an outlier in group 3 - a smaller rat than the rest We can also notify the big differences between groups and between rats.
+It is possible to filter the outliers but this needs to be carefully done, especially if they represent natural variation within the data.
+Outliers can be legitimate data points that may carry important information or represent unique cases (biological variability for instance).
+However, if they are due to measurement errors or anomalies, it might be appropriate to handle them.
+In that case, let's consider that the outliers in group 1 and 3 are a result of a rare and unrepeatable event that substantially skews the observed results but doesn't reflect the studied phenomenon's reality.
+
+**Analyze of weights mean and standard deviation per group- Removing the outliers**
+
 ```{r}
-# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+# Create a new data by filtering the outliers and adjust the ggplot code the draw the plot again with the new data
 RATS4_2 <- RATS4 %>% 
   filter(mean > 240) %>% 
   filter(mean < 540)
@@ -237,7 +267,12 @@ ggplot(RATS4_2, aes(x = Group, y = mean)) +
 
 ```
 
+After outliers removal, the plot exhibits a more normally distributed pattern, making it easier to visualize trends and patterns in the data.
+
+**Let's create a linear model**
+
 ```{r}
+# Save the Time 0 weigh of rats as an object to use it in the model
 RATS4_3 <- RATS4 %>%
   mutate(baseline = RATS$WD1)
 
@@ -245,6 +280,7 @@ RATS4_3 <- RATS4 %>%
 # We don't consider the rats individuality but more the group differences that impact the results but also their weight at the beginning of the study
 fit_RATS <- lm(mean ~ baseline + Group, data = RATS4_3)
 
+# summary of the model
 summary(fit_RATS)
 anova(fit_RATS)
 AIC(fit_RATS) # 129
@@ -252,7 +288,7 @@ BIC(fit_RATS) # 133
 plot(fit_RATS)
 
 # just for the try, let's remove baseline and see what is happening
-# this model explain 92% but it is because there is a strong dependence between the data from one group and from each rat. Therefore there is a correlation that is not justified. This correlation might indicate interdependencies that are not justified or are not captured fully by the current model.
+# this model explain 92% but it is because there is a strong dependence between the data from one group and from each rat. Therefore there is a correlation that is not justified. This correlation might indicate interdependence that are not justified.
 fit_RATS2 <- lm(mean ~ Group, data = RATS4_3)
 summary(fit_RATS2)
 anova(fit_RATS2)
@@ -260,34 +296,218 @@ AIC(fit_RATS2) # 165
 BIC(fit_RATS2) # 168
 ```
 
-FIRST MODEL WITH BASELINE _ CONCLUSION: 
-The T value of the baseline is 10.8, it is very high so it means this baseline impacts the studies weight (p is very small so it is significant). The estimate for the baseline variable remains significantly different from zero even when considering its standard error, reinforcing its importance in explaining weight changes.
-Group Impact: Group 1 serves as reference. The coefficients for Group2 and Group3 which represent the differences between those groups and the baseline, aren't as substantial, and their impact on weight might not be statistically significant based on the p-values. 
-The spread of residuals looks decent, with the majority being relatively close to zero 
-However, there are a few larger residuals (especially the maximum value - the median is 2.19, and the values between the first quartile (1Q) and the third quartile (3Q) range from -4.194 to 7.577.), indicating potential outliers or areas where the model might not fit perfectly.
-The anova results suggests that while baseline has a strong effect on the mean, Group might have some influence. Baseline has a highly significant effect on the mean, given its extremely low p-value (p < 0.001). However, Group shows a p-value of 0.076, indicating a relatively higher significance threshold (not less than 0.05).
+FIRST MODEL WITH BASELINE
 
+\- The T value of the baseline is 10.8, it is very high so it means this baseline impacts the studies weight (p is very small so it is significant).
+The estimate for the baseline variable remains significantly different from zero, even when considering its standard error, reinforcing its importance in explaining weight changes.
 
-### Random Effects in Longitudinal Analysis:
+\- Group Impact: Group 1 serves as reference.
+The coefficients for Group2 and Group3 which represent the differences between those groups and the baseline, aren't as substantial, and their impact on weight might not be statistically significant based on the p-values.
+
+\- The spread of residuals looks decent, with the majority being relatively close to zero.
+However, there are a few larger residuals (especially the maximum value - the median is 2.19, and the values between the 1Q and 3Q range from -4.194 to 7.577), indicating potential areas where the model might not fit perfectly and where the fitted values are largely underestimated (but also overestimated). This is also very visible when analyzing the residuals plot.
+
+\- Similarly, the anova results suggests that the baseline has a strong and significant effect on the mean.
+Group might have some influence and shows a p-value of 0.076, indicating a relatively high significance threshold.
+
+## Random Effects in Longitudinal Analysis - BPRS dataset
 
 Implement the analyses of Chapter 9 of MABS, using the R codes of Exercise Set 6: Meet and Repeat: PART II, but using the BPRS data (from Chapter 8 and Meet and Repeat: PART I).
 (0-8 points: 0-4 points for graphs or analysis results + 0-4 points for their interpretations)
 
+**Plot the data**
+```{r}
+# Draw a plot for each subject and its bprs per week
+ggplot(BPRS_long, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  scale_y_continuous(name = "bprs over time")
+```
+
+Insights: Variations between subject are broad.
+We can see that most of the subject has a decreasing bprs over week no matter the treatment.
+Mostly the time and potentially the subject starting point seems to affect the result more than the treatment type itself.
+Treatment 2 subjects seem to have higher 'pbrs' from the beginning and it seems to influence the rest of the weeks.
+
+
+**Creation of a linear model**
 
 ```{r}
+# create a simple regression model
+BPRS_model1 <- lm(bprs ~ week + treatment, data = BPRS_long) 
+
+# print out a summary of the model
+summary(BPRS_model1) 
+
+anova(BPRS_model1) 
+
+BIC(BPRS_model1) # 2852
+AIC(BPRS_model1) # 2837
+```
+
+Insights: the model explains only 18% of the variance which is very small.
+It suggests that a significant portion of the variability in the 'bprs' remains unexplained by the predictors in the model.
+Week has a big effect on the BPRS and It is significant.
+The high residual variability indicates the model is not effective to explain the 'bprs'.
+It may be worth exploring other factors that could better explain the variability in 'bprs'.
+
+
+**Adding random effects to the model:**
+
+Notes:
+
+\- Fixed Effects: Variables we are interested in and we want to estimate the effects or coefficients directly.
+They have a systematic impact on the response variable.
+Fixed effects are often the primary focus of analysis, while random effects account for additional variability that isn't explicitly modeled as a primary predictor but impacts the variance.
+
+\- Random Effects: Variables we think impact the variability but not in a systemic manner.
+
+For example, in a study analyzing subject's 'bprs' based on different treatment, the subjects themselves might be included as a random effect because we're not directly interested in the effect of the subjects, but we acknowledge that they may introduce variability in their 'bprs' that is not systematically related to other predictors.
+
+```{r}
+library(lme4) # to add random effects
+library(lmerTest) # to get p value with random effects
+
+# Create a random intercept model with subject only. The week does not effect on the subject. 
+BPRS_model2 <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRS_long, REML = FALSE)
+
+# Summary of the model
+summary(BPRS_model2)
+
+anova(BPRS_model2) 
+
+BIC(BPRS_model2) # 2768
+AIC(BPRS_model2) # 2748
 
 ```
 
+From the F values, it seems that the "week" factor has a much higher F value compared to the "treatment" factor, suggesting once again that the "week" factor explains more variability in the data compared to the "treatment" factor.
+
+This model is bit better than the previous one when considering the BIC and AIC.
+This model does not take into consideration the fact that each subject may have different evolution of 'bprs' over time, therefore let's try a new model that would take into consideration this random effect.
+
+
+**Mixed model with random effects - week and subject**
+
+-   Individual Variability: If each subject indeed has different baseline levels ('bprs' at the start), a random intercept for 'subject' ((1 \| subject)) might be appropriate.
+-   Varying Response to Time: If time affects individuals differently, incorporating random slopes for 'week' within 'subject' ((week \| subject)) might be beneficial.
+
 ```{r}
+
+# create a random intercept and random slope model
+library(lme4)
+BPRS_model3 <- lmer(bprs ~ week + treatment + (week | subject), data = BPRS_long, REML = FALSE)
+
+# summary of the model
+summary(BPRS_model3)
+
+# ANOVA test on the two models.
+anova(BPRS_model2, BPRS_model3)
+
+# plot the residuals
+plot(BPRS_model3)
 
 ```
 
+In BPRS_model2: (1 \| subject) represents a random intercept for each 'subject'.
+The variance associated with this random intercept (subject-specific variability that is not explained by fixed effects) is estimated in this model.
+
+In BPRS_model3: (week \| subject) represents both random intercepts and random slopes for 'week' within each 'subject'.
+This allows the 'week' effect to vary for each 'subject'.
+This models seems to be better since we can see on the first plot that each individual has a very different 'bprs' slope per subject and this difference per subject exist over time.
+
+Comparison between the 2 models:
+
+\- BPRS_model2 has 5 estimated parameters and a higher AIC (2748.7) and a lower BIC (2768.1).The BIC is lower because the BIC penalizes the more complex models (favorizing the model with 5 vs 7 parameters)
+
+\- BPRS_model3 has 7 estimated parameters and slightly lower AIC (2745.4) and a higher BIC (2772.6) compared to BPRS_model2.
+
+\- The chi-square test for model comparison results in a p-value of 0.02636 for the model3, indicating that BPRS_model3 significantly improves the model fit compared to BPRS_model2.
+
+\- BPRS_model3 has a higher log-likelihood (-1365.7) compared to BPRS_model2 (-1369.4).
+Therefore, based solely on the logLik values, BPRS_model3 appears to provide a better fit to the data than BPRS_model2.
+
+\- The lower deviance values of the BPRS_model3 implies that the model explains a larger proportion of the total variance in the data vs the other model.
+
+To conclude, the BPRS_model3 seems to provide a better fit for the data compared to BPRS_model2 due to its lower AIC, deviance, higher logLik, and its significant improvement in model fit indicated by the chi-square test.
+
+
+**Model3 analyzes:**
+
+The model captures a significant effect of 'week' on 'bprs' scores, indicating a decrease in 'bprs' over time.
+
+\- The scaled residuals range from -2.8919 to 3.7976, indicating a relatively wide spread of values = heteroscedasticity in the residuals which we can also observe in the residuals plot.
+The scaled residuals are close to zero (around -0.0691) implies that a substantial portion of the observations have residuals near the mean.
+The negative scaled residuals (-2.8919) are less extreme compared to the positive scaled residuals (3.7976).
+It suggests that the model more often underestimates the 'bprs' (a positive residual (observed - predicted \> 0) indicates an underestimation by the model.)
+
+\- Random Intercept (Subject-specific intercept): The estimated variance of the intercept among subjects is 64.8222, which translates to a standard deviation of about 8 points around the average BPRS score (intercept is 45.4539 in fixed effects) when all other predictors does not exist (week, treatment).
+This means that subjects may start with 'bprs' scores that differ by about 8 points on average from the overall mean and it represents around 17.6% variability relative to the intercept's value in the BPRS scores.
+If we compare it to the mean, the relative standard deviation is approximately 21.23%.
+\
+This understanding supports the notion that subjects' characteristics (not accounted for by other predictors) might influence their initial 'bprs' scores, and this influence could persist over time.
+
+\- The estimated variance of the effect of 'week' among subjects is 0.9609, with a standard deviation of 0.9802.
+The deviation suggests that for certain subjects, time does not significantly affect their 'bprs' scores but for others it does.
+
+\- Besides, there's a negative correlation (-0.51) between the random intercept and the random slope for 'week' and 'subjects' together.
+The correlation indicates how much the effect on 'bprs' scores can vary between subjects and over time.
+The negative correlation suggests that subjects with higher initial 'bprs' tend to have a weaker decrease in 'bprs' over time ('week') compared to subjects with lower initial scores.
+
+\- Correlation of fixed effect between Intercept and 'week' (-0.58) is negative.
+As the starting/intercept 'bprs' scores increase, the effect of 'week' on 'bprs' scores appears to decrease.
+This implies that subjects with higher initial 'bprs' scores might experience a slower rate of change ('week' effect) compared to those with lower initial scores.
+-\> similar conclusion with the random effects.
+
+\- Correlation between Intercept and 'treatment 2' (-0.247) is negative but a bit less than the first correlation.
+This indicates a moderate negative association between the effect of 'week' and the effect of 'treatment2' relative to the reference level 'treatment1'.
+The presence of 'treatment2' might attenuate the impact of 'week' on 'bprs' scores compared to 'treatment1'.
+Because we want to reduce the 'bprs', the 'treatment2' might limit the positive effect of time ('week') on improving 'bprs', therefore possibly leading to a less favorable outcome compared to 'treatment1'.
+This effect might be even worst for those starting with a higher 'pbrs' as we saw that time affects them less in reducing the 'bprs'.
+These conclusions would require further research to be validated.
+
+
+**Mixed model with random effects - week and subject + consider bprs change over time, based on treatment**
+
+Note: week and treatment both influences each other.
+We use the '\*' if there's reason to believe that the effect of week on bprs differs if treatment is taken or not.
+If there's no reason to believe that the relationship between week and bprs changes based on treatment, using the model week + treatment is sufficient.
+
 ```{r}
+# create a random intercept and random slope model with the interaction
+BPRS_model4 <- lmer(bprs ~ week * treatment + (week | subject), data = BPRS_long, REML = FALSE)
+
+# print a summary of the model
+summary(BPRS_model4)
+plot(BPRS_model4)
+
+# perform an ANOVA test on the 3 models
+anova(BPRS_model2,BPRS_model3,BPRS_model4) 
 
 ```
 
+Chi square of new model is too high to be significant and to draw conclusion
+
+
+**Analyze the fitted vs observed values with the model 3**
 ```{r}
 
+# Create a vector of the fitted values of model 3 - our best model
+Fitted_bprs <- fitted(BPRS_model3)
+
+# Create a new column fitted to our BPRS_long dataset
+BPRS_new <- BPRS_long %>% 
+  mutate(Fitted_bprs = Fitted_bprs)
+
+# draw the plot for the subjects, observed vs fitted values:
+ggplot(BPRS_long, aes(x = week)) +
+  geom_line(aes(y = bprs, group = subject, linetype = "Observed")) +
+  geom_line(aes(y = Fitted_bprs, group = subject, linetype = "Fitted")) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  labs(x = "Week", y = "bprs") 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Note: It does not seem to be such a good model to predict the BPRS of subject in each treatment group. The example we saw in the book with the RATS dataset was better. 
+
+
